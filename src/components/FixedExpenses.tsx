@@ -16,7 +16,7 @@ export default function FixedExpenses() {
   const remaining = MONTHLY_SALARY - total;
 
   return (
-    <div className="glass rounded-2xl overflow-hidden fade-in-up" style={{ animationDelay: "0.1s" }}>
+    <div className="glass glass-hover rounded-2xl overflow-hidden fade-in-up" style={{ animationDelay: "0.1s" }}>
       {/* Header */}
       <div className="px-6 pt-6 pb-4 border-b border-white/[0.05]">
         <div className="flex items-start justify-between">

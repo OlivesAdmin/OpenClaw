@@ -16,6 +16,7 @@ export default function SummaryCards({ totalCreditCard }: SummaryCardsProps) {
   const ccBudgetUsed = (totalCreditCard / CREDIT_CARD_BUDGET) * 100;
   const overBudget = totalCreditCard > CREDIT_CARD_BUDGET;
   const expensePct = (totalExpenses / MONTHLY_SALARY) * 100;
+  const savingsRate = (netSavings / MONTHLY_SALARY) * 100;
 
   const cards = [
     {
@@ -25,11 +26,11 @@ export default function SummaryCards({ totalCreditCard }: SummaryCardsProps) {
       Icon: Wallet,
       TrendIcon: TrendingUp,
       trendText: "Stable",
-      trendPositive: true,
-      color: "#10b981",
-      iconBg: "rgba(16,185,129,0.12)",
-      borderGlow: "rgba(16,185,129,0.15)",
-      topBar: "#10b981",
+      trendUp: true,
+      accentColor: "#10b981",
+      accentBg: "rgba(16,185,129,0.08)",
+      accentBorder: "rgba(16,185,129,0.25)",
+      cardBg: "linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(6,182,212,0.04) 100%)",
     },
     {
       label: "Total Expenses",
@@ -37,27 +38,31 @@ export default function SummaryCards({ totalCreditCard }: SummaryCardsProps) {
       sub: `${expensePct.toFixed(1)}% of income`,
       Icon: ReceiptText,
       TrendIcon: expensePct > 80 ? TrendingUp : TrendingDown,
-      trendText: expensePct > 80 ? "High spend" : "In control",
-      trendPositive: expensePct <= 80,
-      color: expensePct > 90 ? "#ef4444" : "#f97316",
-      iconBg: expensePct > 90 ? "rgba(239,68,68,0.12)" : "rgba(249,115,22,0.12)",
-      borderGlow: expensePct > 90 ? "rgba(239,68,68,0.15)" : "rgba(249,115,22,0.15)",
-      topBar: expensePct > 90 ? "#ef4444" : "#f97316",
+      trendText: expensePct > 80 ? "High spend" : "Controlled",
+      trendUp: expensePct <= 80,
+      accentColor: expensePct > 90 ? "#ef4444" : "#f97316",
+      accentBg: expensePct > 90 ? "rgba(239,68,68,0.08)" : "rgba(249,115,22,0.08)",
+      accentBorder: expensePct > 90 ? "rgba(239,68,68,0.3)" : "rgba(249,115,22,0.3)",
+      cardBg: expensePct > 90
+        ? "linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(249,115,22,0.04) 100%)"
+        : "linear-gradient(135deg, rgba(249,115,22,0.08) 0%, rgba(251,191,36,0.04) 100%)",
     },
     {
       label: "CC Budget Used",
       value: `${Math.min(ccBudgetUsed, 100).toFixed(1)}%`,
       sub: overBudget
         ? `${formatCurrency(totalCreditCard - CREDIT_CARD_BUDGET)} over target`
-        : `${formatCurrency(CREDIT_CARD_BUDGET - totalCreditCard)} remaining`,
+        : `${formatCurrency(CREDIT_CARD_BUDGET - totalCreditCard)} left`,
       Icon: overBudget ? AlertTriangle : CreditCard,
       TrendIcon: overBudget ? TrendingUp : TrendingDown,
       trendText: overBudget ? "Over budget" : "On track",
-      trendPositive: !overBudget,
-      color: overBudget ? "#ef4444" : "#6366f1",
-      iconBg: overBudget ? "rgba(239,68,68,0.12)" : "rgba(99,102,241,0.12)",
-      borderGlow: overBudget ? "rgba(239,68,68,0.15)" : "rgba(99,102,241,0.15)",
-      topBar: overBudget ? "#ef4444" : "#6366f1",
+      trendUp: !overBudget,
+      accentColor: overBudget ? "#ef4444" : "#6366f1",
+      accentBg: overBudget ? "rgba(239,68,68,0.08)" : "rgba(99,102,241,0.08)",
+      accentBorder: overBudget ? "rgba(239,68,68,0.3)" : "rgba(99,102,241,0.3)",
+      cardBg: overBudget
+        ? "linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(220,38,38,0.03) 100%)"
+        : "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.04) 100%)",
     },
     {
       label: "Net Savings",
@@ -65,12 +70,14 @@ export default function SummaryCards({ totalCreditCard }: SummaryCardsProps) {
       sub: netSavings >= 0 ? "Great job this month!" : "Exceeds income",
       Icon: PiggyBank,
       TrendIcon: netSavings >= 0 ? TrendingUp : TrendingDown,
-      trendText: netSavings >= 0 ? `${((netSavings / MONTHLY_SALARY) * 100).toFixed(1)}% rate` : "Deficit",
-      trendPositive: netSavings >= 0,
-      color: netSavings >= 0 ? "#10b981" : "#ef4444",
-      iconBg: netSavings >= 0 ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)",
-      borderGlow: netSavings >= 0 ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)",
-      topBar: netSavings >= 0 ? "#10b981" : "#ef4444",
+      trendText: netSavings >= 0 ? `${savingsRate.toFixed(1)}% rate` : "Deficit",
+      trendUp: netSavings >= 0,
+      accentColor: netSavings >= 0 ? "#10b981" : "#ef4444",
+      accentBg: netSavings >= 0 ? "rgba(16,185,129,0.08)" : "rgba(239,68,68,0.08)",
+      accentBorder: netSavings >= 0 ? "rgba(16,185,129,0.25)" : "rgba(239,68,68,0.3)",
+      cardBg: netSavings >= 0
+        ? "linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(6,182,212,0.04) 100%)"
+        : "linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(249,115,22,0.04) 100%)",
     },
   ];
 
@@ -79,53 +86,58 @@ export default function SummaryCards({ totalCreditCard }: SummaryCardsProps) {
       {cards.map((card, i) => (
         <div
           key={i}
-          className="glass glass-hover rounded-2xl overflow-hidden fade-in-up"
+          className="rounded-2xl overflow-hidden fade-in-up relative"
           style={{
             animationDelay: `${i * 0.07}s`,
-            boxShadow: `0 0 0 1px ${card.borderGlow}, 0 4px 24px rgba(0,0,0,0.2)`,
+            background: card.cardBg,
+            border: `1px solid ${card.accentBorder}`,
+            boxShadow: `0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)`,
           }}
         >
-          {/* Color top strip */}
-          <div className="h-0.5 w-full" style={{ background: `linear-gradient(90deg, ${card.topBar}, transparent)` }} />
+          {/* Bold left accent bar */}
+          <div
+            className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl"
+            style={{ background: `linear-gradient(180deg, ${card.accentColor}, ${card.accentColor}66)` }}
+          />
 
-          <div className="p-5">
-            {/* Icon + trend */}
-            <div className="flex items-start justify-between mb-4">
+          <div className="pl-5 pr-4 pt-4 pb-4">
+            {/* Icon + trend row */}
+            <div className="flex items-start justify-between mb-3">
               <div
-                className="icon-box w-10 h-10"
-                style={{ background: card.iconBg }}
+                className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{
+                  background: card.accentBg,
+                  border: `1px solid ${card.accentBorder}`,
+                  boxShadow: `0 0 16px ${card.accentColor}20`,
+                }}
               >
-                <card.Icon size={18} style={{ color: card.color }} />
+                <card.Icon size={20} style={{ color: card.accentColor }} />
               </div>
+
               <div
                 className="flex items-center gap-1 px-2 py-1 rounded-full"
                 style={{
-                  background: card.trendPositive ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
+                  background: card.trendUp ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)",
+                  border: `1px solid ${card.trendUp ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)"}`,
                 }}
               >
-                <card.TrendIcon
-                  size={10}
-                  style={{ color: card.trendPositive ? "#10b981" : "#ef4444" }}
-                />
-                <span
-                  className="text-[10px] font-medium"
-                  style={{ color: card.trendPositive ? "#10b981" : "#ef4444" }}
-                >
+                <card.TrendIcon size={10} style={{ color: card.trendUp ? "#10b981" : "#ef4444" }} />
+                <span className="text-[10px] font-semibold" style={{ color: card.trendUp ? "#10b981" : "#ef4444" }}>
                   {card.trendText}
                 </span>
               </div>
             </div>
 
-            {/* Value */}
+            {/* Main value */}
             <div
-              className="text-2xl font-bold stat-value mb-0.5"
-              style={{ color: card.color }}
+              className="text-[1.7rem] font-extrabold leading-none mb-1.5 stat-value"
+              style={{ color: card.accentColor, letterSpacing: "-0.03em" }}
             >
               {card.value}
             </div>
 
             {/* Label */}
-            <div className="text-xs font-semibold text-slate-300 mb-0.5">{card.label}</div>
+            <div className="text-[13px] font-semibold text-slate-200 mb-0.5">{card.label}</div>
             <div className="text-[11px] text-slate-500">{card.sub}</div>
           </div>
         </div>
