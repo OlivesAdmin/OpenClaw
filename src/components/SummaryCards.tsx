@@ -3,6 +3,7 @@
 import { Wallet, ReceiptText, CreditCard, PiggyBank, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { FIXED_EXPENSES, MONTHLY_SALARY, CREDIT_CARD_BUDGET } from "@/lib/store";
+import { useTheme } from "@/lib/theme";
 
 interface SummaryCardsProps {
   totalCreditCard: number;
@@ -10,6 +11,7 @@ interface SummaryCardsProps {
 }
 
 export default function SummaryCards({ totalCreditCard }: SummaryCardsProps) {
+  const { theme, t } = useTheme();
   const totalFixed    = FIXED_EXPENSES.reduce((s, e) => s + e.amount, 0);
   const totalExpenses = totalFixed + totalCreditCard;
   const netSavings    = MONTHLY_SALARY - totalExpenses;
@@ -34,7 +36,7 @@ export default function SummaryCards({ totalCreditCard }: SummaryCardsProps) {
       progress: Math.min(expensePct, 100),
     },
     {
-      label: "CC Budget Used", sub: overBudget ? `${formatCurrency(totalCreditCard - CREDIT_CARD_BUDGET)} over limit` : `${formatCurrency(CREDIT_CARD_BUDGET - totalCreditCard)} left`,
+      label: "CC Budget Used", sub: overBudget ? `Over by ${formatCurrency(totalCreditCard - CREDIT_CARD_BUDGET)}` : `${formatCurrency(CREDIT_CARD_BUDGET - totalCreditCard)} left`,
       value: `${ccPct.toFixed(1)}%`,
       Icon: overBudget ? AlertTriangle : CreditCard, TrendIcon: overBudget ? TrendingUp : TrendingDown,
       trendText: overBudget ? "Over" : "On Track", trendGood: !overBudget,
@@ -51,7 +53,6 @@ export default function SummaryCards({ totalCreditCard }: SummaryCardsProps) {
     },
   ];
 
-  // Render 4 flat cards — parent grid handles the 4-column layout
   return (
     <>
       {cards.map((card, i) => (
@@ -62,28 +63,18 @@ export default function SummaryCards({ totalCreditCard }: SummaryCardsProps) {
             animationDelay: `${i * 0.07}s`,
             borderRadius: "22px",
             overflow: "hidden",
-            background: `linear-gradient(145deg, color-mix(in srgb, ${card.c1} 9%, rgba(12,18,40,0.98)) 0%, rgba(8,12,28,0.99) 100%)`,
-            border: `1px solid ${card.c1}28`,
-            boxShadow: `0 0 0 1px rgba(255,255,255,0.04) inset, 0 16px 48px rgba(0,0,0,0.65), 0 0 32px ${card.c1}0e`,
-            transition: "transform 0.25s, box-shadow 0.25s",
+            background: t.summaryCardBg,
+            border: `1px solid ${theme === "dark" ? card.c1 + "28" : t.cardBorder}`,
+            boxShadow: t.cardShadow,
+            transition: "transform 0.25s, box-shadow 0.25s, background 0.4s",
             cursor: "default",
-          }}
-          onMouseEnter={(e) => {
-            const el = e.currentTarget as HTMLDivElement;
-            el.style.transform = "translateY(-3px)";
-            el.style.boxShadow = `0 0 0 1px rgba(255,255,255,0.06) inset, 0 24px 64px rgba(0,0,0,0.75), 0 0 48px ${card.c1}18`;
-          }}
-          onMouseLeave={(e) => {
-            const el = e.currentTarget as HTMLDivElement;
-            el.style.transform = "translateY(0)";
-            el.style.boxShadow = `0 0 0 1px rgba(255,255,255,0.04) inset, 0 16px 48px rgba(0,0,0,0.65), 0 0 32px ${card.c1}0e`;
           }}
         >
           {/* Top accent */}
           <div style={{
             height: "4px",
             background: `linear-gradient(90deg, ${card.c1}, ${card.c2})`,
-            boxShadow: `0 0 18px ${card.c1}cc, 0 0 36px ${card.c1}50`,
+            boxShadow: theme === "dark" ? `0 0 18px ${card.c1}cc, 0 0 36px ${card.c1}50` : "none",
           }} />
 
           <div style={{ padding: "18px 20px 20px" }}>
@@ -92,9 +83,8 @@ export default function SummaryCards({ totalCreditCard }: SummaryCardsProps) {
               <div style={{
                 width: "42px", height: "42px", borderRadius: "13px", flexShrink: 0,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                background: `linear-gradient(135deg, ${card.c1}22, ${card.c2}10)`,
+                background: `${card.c1}18`,
                 border: `1px solid ${card.c1}2a`,
-                boxShadow: `0 4px 14px ${card.c1}20`,
               }}>
                 <card.Icon size={19} style={{ color: card.c1 }} />
               </div>
@@ -115,26 +105,27 @@ export default function SummaryCards({ totalCreditCard }: SummaryCardsProps) {
             <div style={{
               fontSize: "clamp(1.45rem, 2.2vw, 2rem)",
               fontWeight: 900, letterSpacing: "-0.05em", lineHeight: 1,
-              color: card.c1, textShadow: `0 0 32px ${card.c1}55`,
+              color: card.c1,
+              textShadow: theme === "dark" ? `0 0 32px ${card.c1}55` : "none",
               fontVariantNumeric: "tabular-nums",
             }}>
               {card.value}
             </div>
 
-            <div style={{ fontSize: "13px", fontWeight: 600, color: "#e2e8f0", marginTop: "8px" }}>{card.label}</div>
-            <div style={{ fontSize: "11px", color: "#64748b", marginTop: "3px" }}>{card.sub}</div>
+            <div style={{ fontSize: "13px", fontWeight: 600, color: t.textSecondary, marginTop: "8px" }}>{card.label}</div>
+            <div style={{ fontSize: "11px", color: t.textDim, marginTop: "3px" }}>{card.sub}</div>
 
             {/* Progress */}
             <div style={{ marginTop: "14px" }}>
-              <div style={{ height: "4px", borderRadius: "9999px", background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+              <div style={{ height: "4px", borderRadius: "9999px", background: t.progressTrack, overflow: "hidden" }}>
                 <div className="progress-bar-fill" style={{
                   height: "100%", borderRadius: "9999px", width: `${card.progress}%`,
                   background: `linear-gradient(90deg, ${card.c1}, ${card.c2})`,
-                  boxShadow: `0 0 8px ${card.c1}70`,
+                  boxShadow: theme === "dark" ? `0 0 8px ${card.c1}70` : "none",
                 }} />
               </div>
               <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "5px" }}>
-                <span style={{ fontSize: "10px", color: "#334155", fontVariantNumeric: "tabular-nums" }}>{card.progress.toFixed(0)}%</span>
+                <span style={{ fontSize: "10px", color: t.textFaint, fontVariantNumeric: "tabular-nums" }}>{card.progress.toFixed(0)}%</span>
               </div>
             </div>
           </div>

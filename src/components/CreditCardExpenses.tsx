@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { CreditCardExpense, Statement, EXPENSE_CATEGORIES, CATEGORY_COLORS } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
+import { useTheme } from "@/lib/theme";
 
 interface CreditCardExpensesProps {
   statements: Statement[];
@@ -18,25 +19,14 @@ interface CreditCardExpensesProps {
 }
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
-  Dining: Utensils,
-  Shopping: ShoppingBag,
-  Travel: Plane,
-  Entertainment: Film,
-  Healthcare: Heart,
-  Groceries: ShoppingCart,
-  Transport: Car,
-  Utilities: Zap,
-  Others: Package,
+  Dining: Utensils, Shopping: ShoppingBag, Travel: Plane, Entertainment: Film,
+  Healthcare: Heart, Groceries: ShoppingCart, Transport: Car, Utilities: Zap, Others: Package,
 };
 
 export default function CreditCardExpenses({
-  statements,
-  expenses,
-  selectedMonth,
-  onRemoveStatement,
-  onUpdateCategory,
-  onMonthChange,
+  statements, expenses, selectedMonth, onRemoveStatement, onUpdateCategory, onMonthChange,
 }: CreditCardExpensesProps) {
+  const { theme, t } = useTheme();
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("All");
   const [activeTab, setActiveTab] = useState<"transactions" | "statements">("transactions");
@@ -46,147 +36,119 @@ export default function CreditCardExpenses({
     const matchCat = filterCategory === "All" || e.category === filterCategory;
     return matchSearch && matchCat;
   });
-
   const total = filtered.reduce((s, e) => s + e.amount, 0);
 
-  const byCard = statements.reduce((acc, s) => {
-    acc[s.cardName] = (acc[s.cardName] || 0) + s.total;
-    return acc;
-  }, {} as Record<string, number>);
-
   return (
-    <div className="glass rounded-2xl overflow-hidden fade-in-up" style={{ animationDelay: "0.25s" }}>
-      {/* Header */}
-      <div className="px-6 pt-6 pb-4 border-b border-white/[0.05]">
-        <div className="flex items-center justify-between">
+    <div className="fade-in-up" style={{
+      animationDelay: "0.25s", borderRadius: "24px", overflow: "hidden",
+      background: t.cardBg, border: `1px solid ${t.cardBorder}`, boxShadow: t.cardShadow,
+      backdropFilter: "blur(28px)", WebkitBackdropFilter: "blur(28px)", transition: "background 0.4s",
+    }}>
+      <div style={{ height: "4px", background: "linear-gradient(90deg, #ec4899, #f97316)", boxShadow: theme === "dark" ? "0 0 20px #ec4899cc" : "none" }} />
+
+      <div style={{ padding: "22px 24px" }}>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "18px" }}>
           <div>
-            <h2 className="text-sm font-semibold text-white">Credit Card Expenses</h2>
-            <p className="text-[11px] text-slate-500 mt-0.5">
-              {filtered.length} transactions · <span className="text-slate-400 tabular-nums">{formatCurrency(total)}</span>
+            <h2 style={{ fontSize: "15px", fontWeight: 700, color: t.text }}>Credit Card Expenses</h2>
+            <p style={{ fontSize: "11px", color: t.textDim, marginTop: "2px" }}>
+              {filtered.length} transactions · <span style={{ color: t.textMuted, fontVariantNumeric: "tabular-nums" }}>{formatCurrency(total)}</span>
             </p>
           </div>
-          <input
-            type="month"
-            value={selectedMonth}
-            onChange={(e) => onMonthChange(e.target.value)}
-            className="input-glass px-2.5 py-1.5 text-xs text-slate-300"
-            style={{ colorScheme: "dark" }}
-          />
+          <input type="month" value={selectedMonth} onChange={(e) => onMonthChange(e.target.value)}
+            style={{
+              padding: "6px 10px", fontSize: "12px", borderRadius: "10px",
+              background: t.inputBg, border: `1px solid ${t.inputBorder}`, color: t.textSecondary,
+              outline: "none", colorScheme: theme,
+            }} />
         </div>
-      </div>
 
-      <div className="px-6 py-4">
         {/* Tabs */}
-        <div className="flex gap-1 p-0.5 rounded-xl mb-4" style={{ background: "rgba(255,255,255,0.04)" }}>
+        <div style={{ display: "flex", gap: "4px", padding: "3px", borderRadius: "12px", background: t.inputBg, marginBottom: "16px" }}>
           {(["transactions", "statements"] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className="flex-1 py-1.5 rounded-lg text-xs font-medium transition-all capitalize"
-              style={{
-                background: activeTab === tab ? "rgba(99,102,241,0.25)" : "transparent",
-                color: activeTab === tab ? "#a5b4fc" : "#64748b",
-                boxShadow: activeTab === tab ? "0 1px 4px rgba(0,0,0,0.2)" : "none",
-              }}
-            >
+            <button key={tab} onClick={() => setActiveTab(tab)} style={{
+              flex: 1, padding: "6px", borderRadius: "9px", border: "none", cursor: "pointer",
+              fontSize: "12px", fontWeight: 600, textTransform: "capitalize", transition: "all 0.2s",
+              background: activeTab === tab ? "rgba(99,102,241,0.25)" : "transparent",
+              color: activeTab === tab ? "#a5b4fc" : t.textDim,
+              boxShadow: activeTab === tab ? "0 1px 4px rgba(0,0,0,0.15)" : "none",
+            }}>
               {tab}
             </button>
           ))}
         </div>
 
         {activeTab === "statements" ? (
-          <div className="space-y-2">
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {statements.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-10 gap-2">
-                <div className="icon-box w-10 h-10" style={{ background: "rgba(99,102,241,0.1)" }}>
-                  <CreditCard size={18} className="text-slate-500" />
-                </div>
-                <div className="text-sm text-slate-600">No statements uploaded yet</div>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 0", gap: "8px" }}>
+                <CreditCard size={24} style={{ color: t.textFaint }} />
+                <div style={{ fontSize: "13px", color: t.textDim }}>No statements uploaded yet</div>
               </div>
             ) : (
               statements.map((s) => (
-                <div
-                  key={s.id}
-                  className="flex items-center justify-between p-3 rounded-xl"
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="icon-box w-8 h-8" style={{ background: "rgba(99,102,241,0.12)" }}>
-                      <CreditCard size={14} className="text-indigo-400" />
+                <div key={s.id} style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  padding: "12px", borderRadius: "14px",
+                  background: t.subCardBg, border: `1px solid ${t.subCardBorder}`,
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <div style={{ width: "32px", height: "32px", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(99,102,241,0.12)" }}>
+                      <CreditCard size={14} style={{ color: "#818cf8" }} />
                     </div>
                     <div>
-                      <div className="text-xs font-semibold text-white">{s.cardName}</div>
-                      <div className="text-[10px] text-slate-500">{s.filename} · {s.expenses.length} txns · {s.month}</div>
+                      <div style={{ fontSize: "12px", fontWeight: 600, color: t.text }}>{s.cardName}</div>
+                      <div style={{ fontSize: "10px", color: t.textDim }}>{s.filename} · {s.expenses.length} txns</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-bold text-white tabular-nums">{formatCurrency(s.total)}</span>
-                    <button
-                      onClick={() => onRemoveStatement(s.id)}
-                      className="icon-box w-6 h-6 text-slate-600 hover:text-red-400 transition-colors"
-                      style={{ background: "rgba(255,255,255,0.05)" }}
-                    >
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <span style={{ fontSize: "13px", fontWeight: 800, color: t.text, fontVariantNumeric: "tabular-nums" }}>{formatCurrency(s.total)}</span>
+                    <button onClick={() => onRemoveStatement(s.id)} style={{
+                      width: "26px", height: "26px", borderRadius: "8px", border: "none", cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      background: t.subCardBg, color: t.textDim,
+                    }}>
                       <Trash2 size={12} />
                     </button>
                   </div>
                 </div>
               ))
             )}
-
-            {Object.keys(byCard).length > 0 && (
-              <div className="mt-3 pt-3 border-t border-white/5">
-                <div className="section-label mb-2">Total by Card</div>
-                {Object.entries(byCard).map(([card, amt]) => (
-                  <div key={card} className="flex justify-between py-1.5 text-xs">
-                    <span className="text-slate-400">{card}</span>
-                    <span className="text-white font-semibold tabular-nums">{formatCurrency(amt)}</span>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         ) : (
           <>
-            {/* Filters */}
-            <div className="flex gap-2 mb-3">
-              <div className="relative flex-1">
-                <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                <input
-                  type="text"
-                  placeholder="Search transactions…"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="input-glass w-full pl-8 pr-8 py-1.5 text-xs text-slate-300"
-                />
+            <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
+              <div style={{ position: "relative", flex: 1 }}>
+                <Search size={12} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: t.textDim }} />
+                <input type="text" placeholder="Search transactions..." value={search} onChange={(e) => setSearch(e.target.value)}
+                  style={{
+                    width: "100%", padding: "6px 32px 6px 32px", fontSize: "12px", borderRadius: "10px",
+                    background: t.inputBg, border: `1px solid ${t.inputBorder}`, color: t.textSecondary, outline: "none",
+                  }} />
                 {search && (
-                  <button
-                    onClick={() => setSearch("")}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
-                  >
+                  <button onClick={() => setSearch("")} style={{
+                    position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)",
+                    background: "none", border: "none", cursor: "pointer", color: t.textDim,
+                  }}>
                     <X size={11} />
                   </button>
                 )}
               </div>
-              <select
-                value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
-                className="input-glass px-2.5 py-1.5 text-xs text-slate-300"
-              >
-                <option value="All" style={{ background: "#0f172a" }}>All</option>
-                {EXPENSE_CATEGORIES.map((c) => (
-                  <option key={c} value={c} style={{ background: "#0f172a" }}>{c}</option>
-                ))}
+              <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}
+                style={{
+                  padding: "6px 10px", fontSize: "12px", borderRadius: "10px",
+                  background: t.inputBg, border: `1px solid ${t.inputBorder}`, color: t.textSecondary, outline: "none",
+                }}>
+                <option value="All" style={{ background: t.selectBg }}>All</option>
+                {EXPENSE_CATEGORIES.map((c) => <option key={c} value={c} style={{ background: t.selectBg }}>{c}</option>)}
               </select>
             </div>
 
-            {/* Transactions */}
-            <div className="space-y-0.5 max-h-72 overflow-y-auto pr-0.5">
+            <div style={{ maxHeight: "288px", overflowY: "auto", paddingRight: "4px" }}>
               {filtered.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-10 gap-2">
-                  <div className="icon-box w-10 h-10" style={{ background: "rgba(99,102,241,0.1)" }}>
-                    <Search size={18} className="text-slate-500" />
-                  </div>
-                  <div className="text-sm text-slate-600">
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 0", gap: "8px" }}>
+                  <Search size={24} style={{ color: t.textFaint }} />
+                  <div style={{ fontSize: "13px", color: t.textDim }}>
                     {expenses.length === 0 ? "Upload a statement to get started" : "No matching transactions"}
                   </div>
                 </div>
@@ -195,34 +157,24 @@ export default function CreditCardExpenses({
                   const catColor = CATEGORY_COLORS[expense.category as keyof typeof CATEGORY_COLORS] || "#94a3b8";
                   const Icon = CATEGORY_ICONS[expense.category] || Package;
                   return (
-                    <div
-                      key={expense.id}
-                      className="table-row flex items-center gap-3 px-2.5 py-2"
-                    >
-                      <div
-                        className="icon-box w-7 h-7 flex-shrink-0"
-                        style={{ background: `${catColor}18` }}
-                      >
+                    <div key={expense.id} style={{
+                      display: "flex", alignItems: "center", gap: "12px", padding: "8px 10px",
+                      borderRadius: "10px", transition: "background 0.15s", cursor: "default",
+                    }}>
+                      <div style={{ width: "28px", height: "28px", borderRadius: "8px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: `${catColor}18` }}>
                         <Icon size={13} style={{ color: catColor }} />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs text-slate-300 font-medium truncate">{expense.description}</div>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-[10px] text-slate-600">{expense.date}</span>
-                          <span className="text-slate-700 text-[10px]">·</span>
-                          <select
-                            value={expense.category}
-                            onChange={(e) => onUpdateCategory(expense.id, e.target.value)}
-                            className="text-[10px] outline-none cursor-pointer bg-transparent"
-                            style={{ color: catColor }}
-                          >
-                            {EXPENSE_CATEGORIES.map((c) => (
-                              <option key={c} value={c} style={{ background: "#0f172a", color: "#e2e8f0" }}>{c}</option>
-                            ))}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: "12px", color: t.textSecondary, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{expense.description}</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "2px" }}>
+                          <span style={{ fontSize: "10px", color: t.textDim }}>{expense.date}</span>
+                          <select value={expense.category} onChange={(e) => onUpdateCategory(expense.id, e.target.value)}
+                            style={{ fontSize: "10px", color: catColor, background: "transparent", border: "none", outline: "none", cursor: "pointer" }}>
+                            {EXPENSE_CATEGORIES.map((c) => <option key={c} value={c} style={{ background: t.selectBg, color: t.textSecondary }}>{c}</option>)}
                           </select>
                         </div>
                       </div>
-                      <div className="text-sm font-bold text-white tabular-nums flex-shrink-0">
+                      <div style={{ fontSize: "13px", fontWeight: 800, color: t.text, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>
                         {formatCurrency(expense.amount)}
                       </div>
                     </div>
@@ -232,9 +184,9 @@ export default function CreditCardExpenses({
             </div>
 
             {filtered.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-white/5 flex justify-between items-center">
-                <span className="text-xs text-slate-500">{filtered.length} transactions</span>
-                <span className="text-sm font-bold gradient-text tabular-nums">{formatCurrency(total)}</span>
+              <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: `1px solid ${t.divider}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: "12px", color: t.textDim }}>{filtered.length} transactions</span>
+                <span style={{ fontSize: "14px", fontWeight: 900, color: "#ec4899", fontVariantNumeric: "tabular-nums" }}>{formatCurrency(total)}</span>
               </div>
             )}
           </>
