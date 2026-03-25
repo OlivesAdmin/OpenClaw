@@ -3,6 +3,7 @@
 import { Wallet, ReceiptText, CreditCard, PiggyBank, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { FIXED_EXPENSES, MONTHLY_SALARY, CREDIT_CARD_BUDGET } from "@/lib/store";
+import { GlowCard } from "@/components/ui/spotlight-card";
 
 interface SummaryCardsProps {
   totalCreditCard: number;
@@ -28,9 +29,7 @@ export default function SummaryCards({ totalCreditCard }: SummaryCardsProps) {
       trendText: "Stable",
       trendUp: true,
       accentColor: "#10b981",
-      accentBg: "rgba(16,185,129,0.08)",
-      accentBorder: "rgba(16,185,129,0.25)",
-      cardBg: "linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(6,182,212,0.04) 100%)",
+      glowColor: "green" as const,
     },
     {
       label: "Total Expenses",
@@ -41,11 +40,7 @@ export default function SummaryCards({ totalCreditCard }: SummaryCardsProps) {
       trendText: expensePct > 80 ? "High spend" : "Controlled",
       trendUp: expensePct <= 80,
       accentColor: expensePct > 90 ? "#ef4444" : "#f97316",
-      accentBg: expensePct > 90 ? "rgba(239,68,68,0.08)" : "rgba(249,115,22,0.08)",
-      accentBorder: expensePct > 90 ? "rgba(239,68,68,0.3)" : "rgba(249,115,22,0.3)",
-      cardBg: expensePct > 90
-        ? "linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(249,115,22,0.04) 100%)"
-        : "linear-gradient(135deg, rgba(249,115,22,0.08) 0%, rgba(251,191,36,0.04) 100%)",
+      glowColor: expensePct > 90 ? ("red" as const) : ("orange" as const),
     },
     {
       label: "CC Budget Used",
@@ -58,11 +53,7 @@ export default function SummaryCards({ totalCreditCard }: SummaryCardsProps) {
       trendText: overBudget ? "Over budget" : "On track",
       trendUp: !overBudget,
       accentColor: overBudget ? "#ef4444" : "#6366f1",
-      accentBg: overBudget ? "rgba(239,68,68,0.08)" : "rgba(99,102,241,0.08)",
-      accentBorder: overBudget ? "rgba(239,68,68,0.3)" : "rgba(99,102,241,0.3)",
-      cardBg: overBudget
-        ? "linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(220,38,38,0.03) 100%)"
-        : "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.04) 100%)",
+      glowColor: overBudget ? ("red" as const) : ("blue" as const),
     },
     {
       label: "Net Savings",
@@ -73,26 +64,19 @@ export default function SummaryCards({ totalCreditCard }: SummaryCardsProps) {
       trendText: netSavings >= 0 ? `${savingsRate.toFixed(1)}% rate` : "Deficit",
       trendUp: netSavings >= 0,
       accentColor: netSavings >= 0 ? "#10b981" : "#ef4444",
-      accentBg: netSavings >= 0 ? "rgba(16,185,129,0.08)" : "rgba(239,68,68,0.08)",
-      accentBorder: netSavings >= 0 ? "rgba(16,185,129,0.25)" : "rgba(239,68,68,0.3)",
-      cardBg: netSavings >= 0
-        ? "linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(6,182,212,0.04) 100%)"
-        : "linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(249,115,22,0.04) 100%)",
+      glowColor: netSavings >= 0 ? ("gold" as const) : ("red" as const),
     },
   ];
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {cards.map((card, i) => (
-        <div
+        <GlowCard
           key={i}
-          className="rounded-2xl overflow-hidden fade-in-up relative"
-          style={{
-            animationDelay: `${i * 0.07}s`,
-            background: card.cardBg,
-            border: `1px solid ${card.accentBorder}`,
-            boxShadow: `0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)`,
-          }}
+          glowColor={card.glowColor}
+          customSize
+          className="fade-in-up w-full h-full"
+          style={{ animationDelay: `${i * 0.07}s` } as React.CSSProperties}
         >
           {/* Bold left accent bar */}
           <div
@@ -100,14 +84,14 @@ export default function SummaryCards({ totalCreditCard }: SummaryCardsProps) {
             style={{ background: `linear-gradient(180deg, ${card.accentColor}, ${card.accentColor}66)` }}
           />
 
-          <div className="pl-5 pr-4 pt-4 pb-4">
+          <div className="pl-5 pr-4 pt-4 pb-4 flex flex-col h-full">
             {/* Icon + trend row */}
             <div className="flex items-start justify-between mb-3">
               <div
                 className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
                 style={{
-                  background: card.accentBg,
-                  border: `1px solid ${card.accentBorder}`,
+                  background: `${card.accentColor}14`,
+                  border: `1px solid ${card.accentColor}40`,
                   boxShadow: `0 0 16px ${card.accentColor}20`,
                 }}
               >
@@ -140,7 +124,7 @@ export default function SummaryCards({ totalCreditCard }: SummaryCardsProps) {
             <div className="text-[13px] font-semibold text-slate-200 mb-0.5">{card.label}</div>
             <div className="text-[11px] text-slate-500">{card.sub}</div>
           </div>
-        </div>
+        </GlowCard>
       ))}
     </div>
   );
