@@ -1,13 +1,23 @@
 "use client";
 
-import { Home, Zap, Users } from "lucide-react";
+import { Home, Zap, Users, ArrowUpRight } from "lucide-react";
 import { FIXED_EXPENSES, MONTHLY_SALARY } from "@/lib/store";
 import { formatCurrency } from "@/lib/utils";
 
-const EXPENSE_META: Record<string, { Icon: React.ElementType; color: string; color2: string }> = {
-  Rental:         { Icon: Home,  color: "#6366f1", color2: "#8b5cf6" },
-  "Utility Bills":{ Icon: Zap,   color: "#f59e0b", color2: "#fbbf24" },
-  Helper:         { Icon: Users, color: "#10b981", color2: "#34d399" },
+const EXPENSE_META: Record<string, { Icon: React.ElementType; c1: string; c2: string }> = {
+  Rental:          { Icon: Home,  c1: "#6366f1", c2: "#8b5cf6" },
+  "Utility Bills": { Icon: Zap,   c1: "#f59e0b", c2: "#fbbf24" },
+  Helper:          { Icon: Users, c1: "#10b981", c2: "#34d399" },
+};
+
+const CARD_STYLE = {
+  borderRadius: "24px",
+  overflow: "hidden" as const,
+  background: "rgba(14, 20, 42, 0.95)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  boxShadow: "0 20px 60px rgba(0,0,0,0.7), 0 1px 0 rgba(255,255,255,0.06) inset",
+  backdropFilter: "blur(28px)",
+  WebkitBackdropFilter: "blur(28px)",
 };
 
 export default function FixedExpenses() {
@@ -16,93 +26,88 @@ export default function FixedExpenses() {
   const remaining = MONTHLY_SALARY - total;
 
   return (
-    <div className="glass glass-hover rounded-3xl overflow-hidden fade-in-up" style={{ animationDelay: "0.1s" }}>
-      {/* Header */}
-      <div className="px-6 pt-6 pb-5">
-        <div className="flex items-start justify-between">
+    <div className="fade-in-up" style={{ ...CARD_STYLE, animationDelay: "0.1s" }}>
+      {/* Top indigo strip */}
+      <div style={{ height: "4px", background: "linear-gradient(90deg, #6366f1, #8b5cf6)", boxShadow: "0 0 20px #6366f1cc" }} />
+
+      <div style={{ padding: "22px 24px" }}>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "20px" }}>
           <div>
-            <p className="section-label mb-1.5">Recurring</p>
-            <h2 className="text-base font-bold text-white">Fixed Expenses</h2>
+            <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#475569", marginBottom: "6px" }}>
+              Recurring
+            </div>
+            <h2 style={{ fontSize: "15px", fontWeight: 700, color: "#f1f5f9" }}>Fixed Expenses</h2>
           </div>
-          <div className="text-right">
-            <div
-              className="text-2xl font-black stat-value"
-              style={{ color: "#6366f1", letterSpacing: "-0.04em", textShadow: "0 0 24px rgba(99,102,241,0.4)" }}
-            >
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: "22px", fontWeight: 900, letterSpacing: "-0.04em", color: "#6366f1", textShadow: "0 0 30px rgba(99,102,241,0.5)" }}>
               {formatCurrency(total)}
             </div>
-            <div className="text-[11px] text-slate-500 mt-0.5">{pct}% of salary</div>
+            <div style={{ fontSize: "11px", color: "#64748b", marginTop: "3px" }}>{pct}% of salary</div>
           </div>
         </div>
-      </div>
 
-      <div className="h-px mx-6" style={{ background: "rgba(255,255,255,0.05)" }} />
+        <div style={{ height: "1px", background: "rgba(255,255,255,0.06)", marginBottom: "20px" }} />
 
-      {/* Expense items */}
-      <div className="px-6 py-5 space-y-5">
-        {FIXED_EXPENSES.map((expense) => {
-          const barPct = (expense.amount / total) * 100;
-          const meta = EXPENSE_META[expense.name] || EXPENSE_META["Rental"];
-          return (
-            <div key={expense.id}>
-              <div className="flex items-center justify-between mb-2.5">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{
-                      background: `linear-gradient(135deg, ${meta.color}18, ${meta.color2}10)`,
-                      border: `1px solid ${meta.color}25`,
-                      boxShadow: `0 4px 12px ${meta.color}15`,
-                    }}
-                  >
-                    <meta.Icon size={14} style={{ color: meta.color }} />
+        {/* Expense items */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+          {FIXED_EXPENSES.map((expense) => {
+            const barPct = (expense.amount / total) * 100;
+            const meta = EXPENSE_META[expense.name] || EXPENSE_META["Rental"];
+            return (
+              <div key={expense.id}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <div style={{
+                      width: "38px", height: "38px", borderRadius: "12px",
+                      display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                      background: `linear-gradient(135deg, ${meta.c1}20, ${meta.c2}12)`,
+                      border: `1px solid ${meta.c1}28`,
+                      boxShadow: `0 4px 12px ${meta.c1}18`,
+                    }}>
+                      <meta.Icon size={15} style={{ color: meta.c1 }} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: "13px", fontWeight: 600, color: "#e2e8f0" }}>{expense.name}</div>
+                      <div style={{ fontSize: "10px", color: "#475569", marginTop: "2px" }}>{barPct.toFixed(0)}% of fixed</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-sm font-semibold text-slate-200">{expense.name}</div>
-                    <div className="text-[10px] text-slate-600">{barPct.toFixed(0)}% of fixed</div>
+                  <div style={{ fontSize: "15px", fontWeight: 900, color: meta.c1, letterSpacing: "-0.03em", textShadow: `0 0 20px ${meta.c1}50`, fontVariantNumeric: "tabular-nums" }}>
+                    {formatCurrency(expense.amount)}
                   </div>
                 </div>
-                <div
-                  className="text-sm font-black tabular-nums"
-                  style={{ color: meta.color, letterSpacing: "-0.02em" }}
-                >
-                  {formatCurrency(expense.amount)}
-                </div>
-              </div>
-
-              {/* Progress bar */}
-              <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
-                <div
-                  className="h-full rounded-full progress-bar-fill"
-                  style={{
+                <div style={{ height: "3px", borderRadius: "9999px", background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+                  <div className="progress-bar-fill" style={{
+                    height: "100%", borderRadius: "9999px",
                     width: `${barPct}%`,
-                    background: `linear-gradient(90deg, ${meta.color}, ${meta.color2})`,
-                    boxShadow: `0 0 6px ${meta.color}50`,
-                  }}
-                />
+                    background: `linear-gradient(90deg, ${meta.c1}, ${meta.c2})`,
+                    boxShadow: `0 0 8px ${meta.c1}60`,
+                  }} />
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Footer */}
-      <div
-        className="mx-5 mb-5 px-4 py-3 rounded-2xl flex items-center justify-between"
-        style={{
-          background: "linear-gradient(135deg, rgba(34,211,153,0.07), rgba(6,182,212,0.04))",
-          border: "1px solid rgba(34,211,153,0.15)",
-        }}
-      >
-        <div>
-          <div className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Remaining</div>
-          <div className="text-[11px] text-slate-400 mt-0.5">For CC + savings</div>
+            );
+          })}
         </div>
-        <div
-          className="text-lg font-black tabular-nums"
-          style={{ color: "#34d399", letterSpacing: "-0.03em", textShadow: "0 0 16px rgba(52,211,153,0.4)" }}
-        >
-          {formatCurrency(remaining)}
+
+        {/* Remaining footer */}
+        <div style={{
+          marginTop: "20px",
+          padding: "14px 16px",
+          borderRadius: "16px",
+          background: "linear-gradient(135deg, rgba(34,211,153,0.1), rgba(6,182,212,0.05))",
+          border: "1px solid rgba(34,211,153,0.2)",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}>
+          <div>
+            <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#34d399" }}>Remaining</div>
+            <div style={{ fontSize: "11px", color: "#475569", marginTop: "2px" }}>For CC + savings</div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <div style={{ fontSize: "20px", fontWeight: 900, color: "#34d399", letterSpacing: "-0.04em", textShadow: "0 0 20px rgba(52,211,153,0.5)", fontVariantNumeric: "tabular-nums" }}>
+              {formatCurrency(remaining)}
+            </div>
+            <ArrowUpRight size={14} style={{ color: "#34d399" }} />
+          </div>
         </div>
       </div>
     </div>

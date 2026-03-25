@@ -9,178 +9,145 @@ interface BudgetTrackerProps {
   expenses: CreditCardExpense[];
 }
 
+const CARD_STYLE = {
+  borderRadius: "24px",
+  overflow: "hidden" as const,
+  background: "rgba(14, 20, 42, 0.95)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  boxShadow: "0 20px 60px rgba(0,0,0,0.7), 0 1px 0 rgba(255,255,255,0.06) inset",
+  backdropFilter: "blur(28px)",
+  WebkitBackdropFilter: "blur(28px)",
+};
+
 export default function BudgetTracker({ expenses }: BudgetTrackerProps) {
-  const totalCC     = expenses.reduce((s, e) => s + e.amount, 0);
-  const totalFixed  = FIXED_EXPENSES.reduce((s, e) => s + e.amount, 0);
-  const netSavings  = MONTHLY_SALARY - totalFixed - totalCC;
-  const ccPct       = Math.min((totalCC / CREDIT_CARD_BUDGET) * 100, 100);
-  const overBudget  = totalCC > CREDIT_CARD_BUDGET;
+  const totalCC    = expenses.reduce((s, e) => s + e.amount, 0);
+  const totalFixed = FIXED_EXPENSES.reduce((s, e) => s + e.amount, 0);
+  const netSavings = MONTHLY_SALARY - totalFixed - totalCC;
+  const ccPct      = Math.min((totalCC / CREDIT_CARD_BUDGET) * 100, 100);
+  const overBudget = totalCC > CREDIT_CARD_BUDGET;
 
-  const budgetColor = ccPct < 60 ? "#10b981" : ccPct < 85 ? "#f59e0b" : "#ef4444";
-  const budgetColor2 = ccPct < 60 ? "#34d399" : ccPct < 85 ? "#fbbf24" : "#f97316";
+  const budgetC1 = ccPct < 60 ? "#10b981" : ccPct < 85 ? "#f59e0b" : "#ef4444";
+  const budgetC2 = ccPct < 60 ? "#34d399" : ccPct < 85 ? "#fbbf24" : "#f97316";
 
-  const r            = 46;
-  const circumference = 2 * Math.PI * r;
-  const offset       = circumference * (1 - ccPct / 100);
+  const r = 48;
+  const circ = 2 * Math.PI * r;
+  const offset = circ * (1 - ccPct / 100);
 
-  const categoryTotals = groupByCategory(expenses);
-  const sortedCategories = Object.entries(categoryTotals)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 4);
+  const catTotals = groupByCategory(expenses);
+  const sorted = Object.entries(catTotals).sort(([, a], [, b]) => b - a).slice(0, 4);
 
   return (
-    <div className="glass rounded-3xl overflow-hidden fade-in-up" style={{ animationDelay: "0.15s" }}>
-      {/* Header */}
-      <div className="px-6 pt-6 pb-5">
-        <div className="flex items-start justify-between">
+    <div className="fade-in-up" style={{ ...CARD_STYLE, animationDelay: "0.15s" }}>
+      {/* Top strip */}
+      <div style={{ height: "4px", background: `linear-gradient(90deg, ${budgetC1}, ${budgetC2})`, boxShadow: `0 0 20px ${budgetC1}cc` }} />
+
+      <div style={{ padding: "22px 24px" }}>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "20px" }}>
           <div>
-            <p className="section-label mb-1.5">Tracking</p>
-            <h2 className="text-base font-bold text-white">CC Budget</h2>
+            <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#475569", marginBottom: "6px" }}>Tracking</div>
+            <h2 style={{ fontSize: "15px", fontWeight: 700, color: "#f1f5f9" }}>CC Budget</h2>
+            <div style={{ fontSize: "11px", color: "#475569", marginTop: "3px" }}>Target: {formatCurrency(CREDIT_CARD_BUDGET)}/mo</div>
           </div>
-          <div
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-bold"
-            style={{
-              background: overBudget ? "rgba(239,68,68,0.1)" : "rgba(16,185,129,0.1)",
-              color: overBudget ? "#ef4444" : "#10b981",
-              border: `1px solid ${overBudget ? "rgba(239,68,68,0.2)" : "rgba(16,185,129,0.2)"}`,
-            }}
-          >
-            {overBudget ? <AlertTriangle size={10} /> : <CheckCircle size={10} />}
-            {overBudget ? "Over" : "On Track"}
+          <div style={{
+            display: "flex", alignItems: "center", gap: "5px",
+            padding: "5px 12px", borderRadius: "9999px",
+            background: overBudget ? "rgba(239,68,68,0.12)" : "rgba(16,185,129,0.12)",
+            border: `1px solid ${overBudget ? "rgba(239,68,68,0.25)" : "rgba(16,185,129,0.25)"}`,
+          }}>
+            {overBudget ? <AlertTriangle size={11} style={{ color: "#ef4444" }} /> : <CheckCircle size={11} style={{ color: "#10b981" }} />}
+            <span style={{ fontSize: "11px", fontWeight: 700, color: overBudget ? "#ef4444" : "#10b981" }}>
+              {overBudget ? "Over" : "On Track"}
+            </span>
           </div>
         </div>
-      </div>
 
-      <div className="h-px mx-6" style={{ background: "rgba(255,255,255,0.05)" }} />
+        <div style={{ height: "1px", background: "rgba(255,255,255,0.06)", marginBottom: "20px" }} />
 
-      <div className="px-6 py-5">
         {/* Ring + stats */}
-        <div className="flex items-center gap-5 mb-5">
-          {/* SVG Ring */}
-          <div className="relative flex-shrink-0">
-            <svg width="108" height="108" viewBox="0 0 110 110">
-              {/* Track */}
-              <circle cx="55" cy="55" r={r} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
-              {/* Progress */}
+        <div style={{ display: "flex", alignItems: "center", gap: "20px", marginBottom: "20px" }}>
+          {/* SVG ring */}
+          <div style={{ position: "relative", flexShrink: 0 }}>
+            <svg width="114" height="114" viewBox="0 0 114 114">
+              <circle cx="57" cy="57" r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="9" />
               <circle
-                cx="55" cy="55" r={r}
-                fill="none"
-                stroke={budgetColor}
-                strokeWidth="8"
-                strokeLinecap="round"
-                strokeDasharray={circumference}
-                strokeDashoffset={offset}
-                transform="rotate(-90 55 55)"
+                cx="57" cy="57" r={r}
+                fill="none" stroke={budgetC1} strokeWidth="9" strokeLinecap="round"
+                strokeDasharray={circ} strokeDashoffset={offset}
+                transform="rotate(-90 57 57)"
                 style={{
                   transition: "stroke-dashoffset 1.4s cubic-bezier(0.4,0,0.2,1), stroke 0.3s",
-                  filter: `drop-shadow(0 0 8px ${budgetColor}80)`,
+                  filter: `drop-shadow(0 0 10px ${budgetC1}aa)`,
                 }}
               />
-              {/* Glow ring (decorative) */}
-              <circle
-                cx="55" cy="55" r={r}
-                fill="none"
-                stroke={budgetColor}
-                strokeWidth="1"
-                strokeDasharray={circumference}
-                strokeDashoffset={offset}
-                transform="rotate(-90 55 55)"
-                opacity="0.3"
-                style={{ filter: `blur(2px)` }}
-              />
             </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span
-                className="text-xl font-black tabular-nums leading-none"
-                style={{ color: budgetColor, textShadow: `0 0 16px ${budgetColor}60` }}
-              >
+            <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontSize: "22px", fontWeight: 900, color: budgetC1, letterSpacing: "-0.04em", textShadow: `0 0 20px ${budgetC1}80` }}>
                 {ccPct.toFixed(0)}%
               </span>
-              <span className="text-[10px] text-slate-600 font-medium mt-0.5">used</span>
+              <span style={{ fontSize: "10px", color: "#475569", fontWeight: 600, marginTop: "2px" }}>used</span>
             </div>
           </div>
 
-          {/* Stats */}
-          <div className="flex-1 space-y-3">
+          {/* Stat rows */}
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "12px" }}>
             {[
-              { label: "Spent",  value: formatCurrency(totalCC),               color: "#e2e8f0" },
-              { label: "Budget", value: formatCurrency(CREDIT_CARD_BUDGET),    color: "#64748b" },
-              { label: overBudget ? "Exceeded" : "Left",
-                value: formatCurrency(Math.abs(CREDIT_CARD_BUDGET - totalCC)),
-                color: overBudget ? "#f87171" : "#34d399" },
-            ].map((row) => (
-              <div key={row.label} className="flex justify-between items-center">
-                <span className="text-xs text-slate-500 font-medium">{row.label}</span>
-                <span className="text-xs font-black tabular-nums" style={{ color: row.color }}>{row.value}</span>
+              { label: "Spent",  val: formatCurrency(totalCC),  c: "#f1f5f9" },
+              { label: "Budget", val: formatCurrency(CREDIT_CARD_BUDGET), c: "#64748b" },
+              { label: overBudget ? "Exceeded" : "Left", val: formatCurrency(Math.abs(CREDIT_CARD_BUDGET - totalCC)), c: overBudget ? "#f87171" : "#34d399" },
+            ].map((r) => (
+              <div key={r.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500 }}>{r.label}</span>
+                <span style={{ fontSize: "13px", fontWeight: 800, color: r.c, fontVariantNumeric: "tabular-nums" }}>{r.val}</span>
               </div>
             ))}
 
-            {/* Progress bar */}
-            <div>
-              <div className="h-1 rounded-full overflow-hidden mt-1" style={{ background: "rgba(255,255,255,0.05)" }}>
-                <div
-                  className="h-full rounded-full progress-bar-fill"
-                  style={{
-                    width: `${ccPct}%`,
-                    background: `linear-gradient(90deg, ${budgetColor}, ${budgetColor2})`,
-                    boxShadow: `0 0 6px ${budgetColor}50`,
-                  }}
-                />
-              </div>
+            {/* progress bar */}
+            <div style={{ height: "4px", borderRadius: "9999px", background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+              <div className="progress-bar-fill" style={{
+                height: "100%", borderRadius: "9999px", width: `${ccPct}%`,
+                background: `linear-gradient(90deg, ${budgetC1}, ${budgetC2})`,
+                boxShadow: `0 0 8px ${budgetC1}70`,
+              }} />
             </div>
           </div>
         </div>
 
         {/* Net savings */}
-        <div
-          className="rounded-2xl px-4 py-3 mb-4"
-          style={{
-            background: netSavings >= 0
-              ? "linear-gradient(135deg, rgba(16,185,129,0.08), rgba(6,182,212,0.04))"
-              : "linear-gradient(135deg, rgba(239,68,68,0.08), rgba(249,115,22,0.04))",
-            border: `1px solid ${netSavings >= 0 ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)"}`,
-          }}
-        >
-          <div className="flex justify-between items-center">
-            <div>
-              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Net Savings</div>
-              <div className="text-[10px] text-slate-600 mt-0.5">Salary − all expenses</div>
-            </div>
-            <div
-              className="text-base font-black tabular-nums"
-              style={{
-                color: netSavings >= 0 ? "#34d399" : "#f87171",
-                letterSpacing: "-0.03em",
-                textShadow: `0 0 16px ${netSavings >= 0 ? "rgba(52,211,153,0.4)" : "rgba(248,113,113,0.4)"}`,
-              }}
-            >
-              {netSavings >= 0 ? "+" : "−"}{formatCurrency(Math.abs(netSavings))}
-            </div>
+        <div style={{
+          padding: "14px 16px", borderRadius: "16px", marginBottom: sorted.length > 0 ? "20px" : 0,
+          background: netSavings >= 0 ? "linear-gradient(135deg, rgba(16,185,129,0.1), rgba(6,182,212,0.05))" : "linear-gradient(135deg, rgba(239,68,68,0.1), rgba(249,115,22,0.05))",
+          border: `1px solid ${netSavings >= 0 ? "rgba(52,211,153,0.22)" : "rgba(239,68,68,0.22)"}`,
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+        }}>
+          <div>
+            <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: netSavings >= 0 ? "#34d399" : "#f87171" }}>Net Savings</div>
+            <div style={{ fontSize: "10px", color: "#475569", marginTop: "2px" }}>Salary − all expenses</div>
+          </div>
+          <div style={{ fontSize: "18px", fontWeight: 900, letterSpacing: "-0.04em", color: netSavings >= 0 ? "#34d399" : "#f87171", textShadow: `0 0 20px ${netSavings >= 0 ? "rgba(52,211,153,0.5)" : "rgba(239,68,68,0.5)"}`, fontVariantNumeric: "tabular-nums" }}>
+            {netSavings >= 0 ? "+" : "−"}{formatCurrency(Math.abs(netSavings))}
           </div>
         </div>
 
         {/* Top categories */}
-        {sortedCategories.length > 0 && (
+        {sorted.length > 0 && (
           <div>
-            <div className="section-label mb-3">Top Categories</div>
-            <div className="space-y-2.5">
-              {sortedCategories.map(([cat, amount]) => {
+            <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#475569", marginBottom: "12px" }}>Top Categories</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {sorted.map(([cat, amount]) => {
                 const catPct  = (amount / totalCC) * 100;
                 const catColor = CATEGORY_COLORS[cat as keyof typeof CATEGORY_COLORS] || "#94a3b8";
                 return (
                   <div key={cat}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: catColor, boxShadow: `0 0 6px ${catColor}80` }} />
-                        <span className="text-xs text-slate-400 truncate font-medium">{cat}</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: catColor, boxShadow: `0 0 8px ${catColor}aa`, flexShrink: 0 }} />
+                        <span style={{ fontSize: "12px", color: "#94a3b8", fontWeight: 500 }}>{cat}</span>
                       </div>
-                      <span className="text-xs font-black text-white tabular-nums">{formatCurrency(amount)}</span>
+                      <span style={{ fontSize: "12px", fontWeight: 800, color: "#f1f5f9", fontVariantNumeric: "tabular-nums" }}>{formatCurrency(amount)}</span>
                     </div>
-                    <div className="h-0.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
-                      <div
-                        className="h-full rounded-full"
-                        style={{ width: `${catPct}%`, background: catColor, boxShadow: `0 0 4px ${catColor}60` }}
-                      />
+                    <div style={{ height: "2px", borderRadius: "9999px", background: "rgba(255,255,255,0.05)", overflow: "hidden" }}>
+                      <div style={{ height: "100%", borderRadius: "9999px", width: `${catPct}%`, background: catColor, boxShadow: `0 0 6px ${catColor}80` }} />
                     </div>
                   </div>
                 );
