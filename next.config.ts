@@ -1,14 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  webpack: (config) => {
-    // pdfjs-dist uses canvas in Node but we only need the browser build
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      canvas: false,
-    };
-    return config;
-  },
+  // Next.js 16 uses Turbopack by default.
+  // pdfjs-dist is dynamically imported in "use client" components only,
+  // so no special canvas aliasing is needed — the browser build handles it.
+  turbopack: {},
 };
 
 export default nextConfig;
