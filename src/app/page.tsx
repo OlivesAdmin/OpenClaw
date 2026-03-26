@@ -1,7 +1,21 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { ThemeProvider, useTheme } from "@/lib/theme";
+
+function useBreakpoint() {
+  const [bp, setBp] = useState<"mobile" | "tablet" | "desktop">("desktop");
+  useEffect(() => {
+    const update = () => {
+      const w = window.innerWidth;
+      setBp(w < 640 ? "mobile" : w < 1024 ? "tablet" : "desktop");
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+  return bp;
+}
 import Background from "@/components/Background";
 import SummaryCards from "@/components/SummaryCards";
 import FixedExpenses from "@/components/FixedExpenses";
@@ -17,6 +31,9 @@ import { Gem, Wallet, Target, Activity, Sparkles, Sun, Moon } from "lucide-react
 
 function DashboardContent() {
   const { theme, toggle, t } = useTheme();
+  const bp = useBreakpoint();
+  const isMobile = bp === "mobile";
+  const isDesktop = bp === "desktop";
   const {
     statements, creditCardExpenses, selectedMonth, isLoaded,
     addStatement, removeStatement, setSelectedMonth, updateExpenseCategory,
@@ -61,7 +78,7 @@ function DashboardContent() {
         {/* Header */}
         <header style={{
           position: "sticky", top: 0, zIndex: 20,
-          padding: "16px 24px 14px",
+          padding: isMobile ? "12px 16px 10px" : "16px 24px 14px",
           background: t.headerBg,
           backdropFilter: "blur(32px)", WebkitBackdropFilter: "blur(32px)",
           borderBottom: `1px solid ${t.divider}`,
@@ -97,10 +114,10 @@ function DashboardContent() {
               {/* Pills + theme toggle */}
               <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", justifyContent: "flex-end" }}>
                 {[
-                  { icon: <Wallet size={11} />, text: `${formatCurrency(MONTHLY_SALARY)}/mo`, c1: "#10b981", bg: theme === "dark" ? "rgba(16,185,129,0.12)" : "rgba(16,185,129,0.1)", b: theme === "dark" ? "rgba(16,185,129,0.2)" : "rgba(16,185,129,0.2)" },
-                  { icon: <Target size={11} />,  text: `CC ${formatCurrency(CREDIT_CARD_BUDGET)}`, c1: "#6366f1", bg: theme === "dark" ? "rgba(99,102,241,0.12)" : "rgba(99,102,241,0.08)", b: theme === "dark" ? "rgba(99,102,241,0.2)" : "rgba(99,102,241,0.15)" },
-                  { icon: <Activity size={10} />, text: `${savingsPct}% saved`, c1: "#22d3ee", bg: theme === "dark" ? "rgba(34,211,238,0.1)" : "rgba(34,211,238,0.08)", b: theme === "dark" ? "rgba(34,211,238,0.18)" : "rgba(34,211,238,0.15)" },
-                ].map((pill, i) => (
+                  { icon: <Wallet size={11} />, text: `${formatCurrency(MONTHLY_SALARY)}/mo`, c1: "#10b981", bg: theme === "dark" ? "rgba(16,185,129,0.12)" : "rgba(16,185,129,0.1)", b: theme === "dark" ? "rgba(16,185,129,0.2)" : "rgba(16,185,129,0.2)", hideOnMobile: false },
+                  { icon: <Target size={11} />,  text: `CC ${formatCurrency(CREDIT_CARD_BUDGET)}`, c1: "#6366f1", bg: theme === "dark" ? "rgba(99,102,241,0.12)" : "rgba(99,102,241,0.08)", b: theme === "dark" ? "rgba(99,102,241,0.2)" : "rgba(99,102,241,0.15)", hideOnMobile: true },
+                  { icon: <Activity size={10} />, text: `${savingsPct}% saved`, c1: "#22d3ee", bg: theme === "dark" ? "rgba(34,211,238,0.1)" : "rgba(34,211,238,0.08)", b: theme === "dark" ? "rgba(34,211,238,0.18)" : "rgba(34,211,238,0.15)", hideOnMobile: false },
+                ].filter(pill => !isMobile || !pill.hideOnMobile).map((pill, i) => (
                   <div key={i} style={{
                     display: "flex", alignItems: "center", gap: "6px",
                     padding: "6px 12px", borderRadius: "9999px",
@@ -140,7 +157,7 @@ function DashboardContent() {
 
             {/* Allocation bar */}
             <div style={{
-              marginTop: "14px", borderRadius: "16px", padding: "12px 18px",
+              marginTop: "10px", borderRadius: "14px", padding: isMobile ? "10px 14px" : "12px 18px",
               background: t.subCardBg, border: `1px solid ${t.subCardBorder}`,
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
@@ -173,14 +190,14 @@ function DashboardContent() {
         </header>
 
         {/* Main */}
-        <main style={{ padding: "28px 24px 64px", maxWidth: "1400px", margin: "0 auto" }}>
-          {/* Row 1: Summary Cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "20px" }}>
+        <main style={{ padding: isMobile ? "16px 14px 48px" : "28px 24px 64px", maxWidth: "1400px", margin: "0 auto" }}>
+          {/* Row 1: Summary Cards — 2 col mobile, 4 col desktop */}
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: isMobile ? "12px" : "16px", marginBottom: isMobile ? "14px" : "20px" }}>
             <SummaryCards totalCreditCard={totalCC} selectedMonth={selectedMonth} />
           </div>
 
           {/* Row 2: Charts + CC | Gauge + Fixed + Budget + Upload */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: "20px", marginBottom: "20px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: isDesktop ? "1fr 380px" : "1fr", gap: "16px", marginBottom: "16px" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "20px", minWidth: 0 }}>
               <Charts expenses={creditCardExpenses} />
               <CreditCardExpenses
@@ -189,11 +206,16 @@ function DashboardContent() {
                 onUpdateCategory={updateExpenseCategory} onMonthChange={setSelectedMonth}
               />
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-              <SavingsGauge totalCC={totalCC} />
-              <FixedExpenses />
-              <BudgetTracker expenses={creditCardExpenses} />
+            {/* Right sidebar — shown after left col on mobile */}
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr", gap: "16px", alignContent: "start" }}>
+              <div style={{ gridColumn: isMobile ? "1 / -1" : "auto" }}>
+                <SavingsGauge totalCC={totalCC} />
+              </div>
               <StatementUpload onUpload={addStatement} />
+              <FixedExpenses />
+              <div style={{ gridColumn: isMobile ? "1 / -1" : "auto" }}>
+                <BudgetTracker expenses={creditCardExpenses} />
+              </div>
             </div>
           </div>
 

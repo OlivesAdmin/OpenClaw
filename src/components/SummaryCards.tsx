@@ -77,7 +77,7 @@ export default function SummaryCards({ totalCreditCard }: SummaryCardsProps) {
             boxShadow: theme === "dark" ? `0 0 18px ${card.c1}cc, 0 0 36px ${card.c1}50` : "none",
           }} />
 
-          <div style={{ padding: "18px 20px 20px" }}>
+          <div style={{ padding: "clamp(12px, 3vw, 18px) clamp(12px, 3vw, 20px) clamp(14px, 3vw, 20px)" }}>
             {/* Icon + trend */}
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "16px" }}>
               <div style={{
@@ -103,17 +103,18 @@ export default function SummaryCards({ totalCreditCard }: SummaryCardsProps) {
 
             {/* Value */}
             <div style={{
-              fontSize: "clamp(1.45rem, 2.2vw, 2rem)",
-              fontWeight: 900, letterSpacing: "-0.05em", lineHeight: 1,
+              fontSize: "clamp(1.1rem, 4.5vw, 2rem)",
+              fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1,
               color: card.c1,
               textShadow: theme === "dark" ? `0 0 32px ${card.c1}55` : "none",
               fontVariantNumeric: "tabular-nums",
+              wordBreak: "break-all",
             }}>
               {card.value}
             </div>
 
-            <div style={{ fontSize: "13px", fontWeight: 600, color: t.textSecondary, marginTop: "8px" }}>{card.label}</div>
-            <div style={{ fontSize: "11px", color: t.textDim, marginTop: "3px" }}>{card.sub}</div>
+            <div style={{ fontSize: "clamp(11px, 3vw, 13px)", fontWeight: 600, color: t.textSecondary, marginTop: "8px" }}>{card.label}</div>
+            <div style={{ fontSize: "clamp(10px, 2.5vw, 11px)", color: t.textDim, marginTop: "3px" }}>{card.sub}</div>
 
             {/* Progress */}
             <div style={{ marginTop: "14px" }}>
