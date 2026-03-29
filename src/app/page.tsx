@@ -198,12 +198,14 @@ function DashboardContent() {
               background: t.subCardBg, border: `1px solid ${t.subCardBorder}`,
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-                <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: t.label }}>Monthly Allocation</span>
-                <span style={{ fontSize: "11px", fontWeight: 700, color: t.textDim, fontVariantNumeric: "tabular-nums" }}>SGD {MONTHLY_SALARY.toLocaleString()}</span>
+                <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: t.label }}>
+                  {selectedMonth === "all" && monthMultiplier > 1 ? `${monthMultiplier}-Month Allocation` : "Monthly Allocation"}
+                </span>
+                <span style={{ fontSize: "11px", fontWeight: 700, color: t.textDim, fontVariantNumeric: "tabular-nums" }}>SGD {effectiveSalary.toLocaleString()}</span>
               </div>
               <div style={{ display: "flex", height: "6px", borderRadius: "9999px", overflow: "hidden", gap: "2px" }}>
                 {segments.map((seg) => {
-                  const pct = (seg.value / MONTHLY_SALARY) * 100;
+                  const pct = (seg.value / effectiveSalary) * 100;
                   return pct > 0.5 ? (
                     <div key={seg.label} style={{
                       height: "100%", width: `${pct}%`, background: seg.color,

@@ -25,7 +25,12 @@ export function useAppStore() {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        setData(JSON.parse(stored));
+        const parsed: AppData = JSON.parse(stored);
+        // Always use "all" if there are statements (force cumulative view)
+        if (parsed.statements.length > 0) {
+          parsed.selectedMonth = "all";
+        }
+        setData(parsed);
       }
     } catch {
       // ignore
@@ -44,13 +49,16 @@ export function useAppStore() {
 
   const addStatement = useCallback(
     (statement: Statement) => {
+      const allExpenses = [
+        ...data.creditCardExpenses.filter(e => !statement.expenses.find(se => se.id === e.id)),
+        ...statement.expenses,
+      ];
+      // Always switch to "all" when adding a statement so cumulative view is shown
       const newData = {
         ...data,
         statements: [...data.statements.filter(s => s.id !== statement.id), statement],
-        creditCardExpenses: [
-          ...data.creditCardExpenses.filter(e => e.cardName !== statement.cardName || !statement.expenses.find(se => se.id === e.id)),
-          ...statement.expenses,
-        ],
+        creditCardExpenses: allExpenses,
+        selectedMonth: "all",
       };
       save(newData);
     },
@@ -62,12 +70,12 @@ export function useAppStore() {
       const stmt = data.statements.find((s) => s.id === statementId);
       if (!stmt) return;
       const expenseIds = new Set(stmt.expenses.map((e) => e.id));
+      const remainingStmts = data.statements.filter((s) => s.id !== statementId);
       const newData = {
         ...data,
-        statements: data.statements.filter((s) => s.id !== statementId),
-        creditCardExpenses: data.creditCardExpenses.filter(
-          (e) => !expenseIds.has(e.id)
-        ),
+        statements: remainingStmts,
+        creditCardExpenses: data.creditCardExpenses.filter((e) => !expenseIds.has(e.id)),
+        selectedMonth: remainingStmts.length > 0 ? "all" : "all",
       };
       save(newData);
     },

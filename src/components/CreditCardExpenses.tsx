@@ -70,19 +70,22 @@ export default function CreditCardExpenses({
             <button
               onClick={() => onMonthChange("all")}
               style={{
-                padding: "6px 10px", fontSize: "11px", fontWeight: 700, borderRadius: "10px",
-                border: `1px solid ${selectedMonth === "all" ? "rgba(99,102,241,0.5)" : t.inputBorder}`,
-                background: selectedMonth === "all" ? "rgba(99,102,241,0.18)" : t.inputBg,
+                padding: "6px 14px", fontSize: "12px", fontWeight: 700, borderRadius: "10px",
+                border: `1px solid ${selectedMonth === "all" ? "rgba(99,102,241,0.6)" : t.inputBorder}`,
+                background: selectedMonth === "all" ? "rgba(99,102,241,0.22)" : t.inputBg,
                 color: selectedMonth === "all" ? "#a5b4fc" : t.textDim,
                 cursor: "pointer", whiteSpace: "nowrap",
+                boxShadow: selectedMonth === "all" ? "0 0 12px rgba(99,102,241,0.25)" : "none",
               }}
-            >All</button>
+            >All months</button>
             <input type="month" value={selectedMonth === "all" ? "" : selectedMonth}
               onChange={(e) => onMonthChange(e.target.value || "all")}
+              placeholder="Filter month"
               style={{
                 padding: "6px 10px", fontSize: "12px", borderRadius: "10px",
-                background: t.inputBg, border: `1px solid ${t.inputBorder}`, color: t.textSecondary,
-                outline: "none", colorScheme: theme,
+                background: selectedMonth !== "all" ? "rgba(99,102,241,0.12)" : t.inputBg,
+                border: `1px solid ${selectedMonth !== "all" ? "rgba(99,102,241,0.4)" : t.inputBorder}`,
+                color: t.textSecondary, outline: "none", colorScheme: theme,
               }} />
           </div>
         </div>
