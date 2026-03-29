@@ -93,6 +93,16 @@ function toAmount(s: string): number {
 const AMOUNT_RE = /\b(\d{1,3}(?:,\d{3})*\.\d{2})\b/g;
 const CREDIT_MARKER = /\b(CR|Credit|Cr\.)\b/i;
 
+// Lines that are payments/credits to the card — not real expenses
+const PAYMENT_LINE = /\b(incoming\s*payment|payment\s*received|payment\s*thank\s*you|thank\s*you\s*for\s*payment|prev(?:ious)?\s*balance|opening\s*balance|closing\s*balance|balance\s*[bc]\/?[fb]|balance\s*brought|balance\s*carried|minimum\s*payment|auto[\s-]?pay|refund|reversal|cashback|rebate|reward|interest\s*charge|finance\s*charge|late\s*charge|annual\s*fee|cash\s*advance\s*fee)\b/i;
+
+function cleanDescription(desc: string): string {
+  return desc
+    .replace(/[{}\[\]<>|\\^~`]+/g, "")   // remove stray punctuation / brace artifacts
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 // ─── Text extraction ──────────────────────────────────────────────────────────
 
 interface RawItem {
@@ -181,16 +191,19 @@ function parseTransactions(lines: string[], cardName: string): CreditCardExpense
   const seen = new Set<string>();
 
   function addResult(date: string, description: string, amount: number) {
-    if (amount <= 0 || !description || description.length < 2) return;
-    const key = `${date}|${description}|${amount}`;
+    const desc = cleanDescription(description);
+    if (amount <= 0 || !desc || desc.length < 2) return;
+    if (PAYMENT_LINE.test(desc)) return;          // skip payments/credits to card
+    if (CREDIT_MARKER.test(desc)) return;
+    const key = `${date}|${desc}|${amount}`;
     if (seen.has(key)) return;
     seen.add(key);
     results.push({
       id: `${cardName}-pdf-${Date.now()}-${results.length}`,
       date: toISODate(date),
-      description: description.trim(),
+      description: desc,
       amount,
-      category: categorizeExpense(description),
+      category: categorizeExpense(desc),
       cardName,
     });
   }
@@ -198,6 +211,7 @@ function parseTransactions(lines: string[], cardName: string): CreditCardExpense
   // ── Pass A: date prefix on same line as description + amount ──────────────
   for (const line of lines) {
     if (CREDIT_MARKER.test(line)) continue;
+    if (PAYMENT_LINE.test(line)) continue;
 
     for (const pat of DATE_PREFIX_PATTERNS) {
       const dm = line.match(pat);
@@ -234,6 +248,7 @@ function parseTransactions(lines: string[], cardName: string): CreditCardExpense
 
       const nextLine = lines[i + 1];
       if (CREDIT_MARKER.test(nextLine)) continue;
+      if (PAYMENT_LINE.test(nextLine)) continue;
 
       const amounts = [...nextLine.matchAll(AMOUNT_RE)];
       if (amounts.length === 0) continue;
@@ -260,6 +275,7 @@ function parseTransactions(lines: string[], cardName: string): CreditCardExpense
 
     for (const line of lines) {
       if (CREDIT_MARKER.test(line)) continue;
+      if (PAYMENT_LINE.test(line)) continue;
       const amounts = [...line.matchAll(AMOUNT_RE)];
       if (amounts.length === 0) continue;
 
