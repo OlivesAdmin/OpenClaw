@@ -17,13 +17,7 @@ async function getPdfLib() {
   const pdfjsLib = await import("pdfjs-dist");
 
   if (typeof window !== "undefined" && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
-    // Try CDN first; if that fails the library falls back to a fake worker.
-    try {
-      pdfjsLib.GlobalWorkerOptions.workerSrc =
-        `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
-    } catch {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = "";
-    }
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
   }
 
   return pdfjsLib;
