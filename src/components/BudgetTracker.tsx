@@ -8,15 +8,17 @@ import { useTheme } from "@/lib/theme";
 
 interface BudgetTrackerProps {
   expenses: CreditCardExpense[];
+  monthMultiplier?: number;
 }
 
-export default function BudgetTracker({ expenses }: BudgetTrackerProps) {
+export default function BudgetTracker({ expenses, monthMultiplier = 1 }: BudgetTrackerProps) {
   const { theme, t } = useTheme();
   const totalCC    = expenses.reduce((s, e) => s + e.amount, 0);
-  const totalFixed = FIXED_EXPENSES.reduce((s, e) => s + e.amount, 0);
-  const netSavings = MONTHLY_SALARY - totalFixed - totalCC;
-  const ccPct      = Math.min((totalCC / CREDIT_CARD_BUDGET) * 100, 100);
-  const overBudget = totalCC > CREDIT_CARD_BUDGET;
+  const totalFixed = FIXED_EXPENSES.reduce((s, e) => s + e.amount, 0) * monthMultiplier;
+  const netSavings = MONTHLY_SALARY * monthMultiplier - totalFixed - totalCC;
+  const ccBudget   = CREDIT_CARD_BUDGET * monthMultiplier;
+  const ccPct      = Math.min((totalCC / ccBudget) * 100, 100);
+  const overBudget = totalCC > ccBudget;
 
   const budgetC1 = ccPct < 60 ? "#10b981" : ccPct < 85 ? "#f59e0b" : "#ef4444";
   const budgetC2 = ccPct < 60 ? "#34d399" : ccPct < 85 ? "#fbbf24" : "#f97316";
@@ -41,7 +43,7 @@ export default function BudgetTracker({ expenses }: BudgetTrackerProps) {
           <div>
             <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: t.label, marginBottom: "6px" }}>Tracking</div>
             <h2 style={{ fontSize: "15px", fontWeight: 700, color: t.text }}>CC Budget</h2>
-            <div style={{ fontSize: "11px", color: t.textDim, marginTop: "3px" }}>Target: {formatCurrency(CREDIT_CARD_BUDGET)}/mo</div>
+            <div style={{ fontSize: "11px", color: t.textDim, marginTop: "3px" }}>Target: {formatCurrency(ccBudget)}{monthMultiplier > 1 ? ` (${monthMultiplier}mo)` : "/mo"}</div>
           </div>
           <div style={{
             display: "flex", alignItems: "center", gap: "5px", padding: "5px 12px", borderRadius: "9999px",
@@ -75,8 +77,8 @@ export default function BudgetTracker({ expenses }: BudgetTrackerProps) {
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "12px" }}>
             {[
               { label: "Spent",  val: formatCurrency(totalCC),  c: t.text },
-              { label: "Budget", val: formatCurrency(CREDIT_CARD_BUDGET), c: t.textDim },
-              { label: overBudget ? "Exceeded" : "Left", val: formatCurrency(Math.abs(CREDIT_CARD_BUDGET - totalCC)), c: overBudget ? "#f87171" : "#34d399" },
+              { label: "Budget", val: formatCurrency(ccBudget), c: t.textDim },
+              { label: overBudget ? "Exceeded" : "Left", val: formatCurrency(Math.abs(ccBudget - totalCC)), c: overBudget ? "#f87171" : "#34d399" },
             ].map((r) => (
               <div key={r.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontSize: "12px", color: t.textDim, fontWeight: 500 }}>{r.label}</span>

@@ -8,30 +8,33 @@ import { useTheme } from "@/lib/theme";
 
 interface OverallSummaryProps {
   totalCreditCard: number;
+  monthMultiplier?: number;
 }
 
-export default function OverallSummary({ totalCreditCard }: OverallSummaryProps) {
+export default function OverallSummary({ totalCreditCard, monthMultiplier = 1 }: OverallSummaryProps) {
   const { theme, t } = useTheme();
-  const totalFixed    = FIXED_EXPENSES.reduce((s, e) => s + e.amount, 0);
+  const salary        = MONTHLY_SALARY * monthMultiplier;
+  const totalFixed    = FIXED_EXPENSES.reduce((s, e) => s + e.amount, 0) * monthMultiplier;
   const totalExpenses = totalFixed + totalCreditCard;
-  const netSavings    = MONTHLY_SALARY - totalExpenses;
-  const savingsPct    = (netSavings / MONTHLY_SALARY) * 100;
-  const expensePct    = (totalExpenses / MONTHLY_SALARY) * 100;
+  const netSavings    = salary - totalExpenses;
+  const savingsPct    = (netSavings / salary) * 100;
+  const expensePct    = (totalExpenses / salary) * 100;
 
   const breakdown = [
-    { name: "Rental",  value: 6300,                     color: "#6366f1" },
-    { name: "Utility", value: 600,                      color: "#f59e0b" },
-    { name: "Helper",  value: 800,                      color: "#10b981" },
-    { name: "CC",      value: totalCreditCard,           color: "#ec4899" },
-    { name: "Savings", value: Math.max(netSavings, 0),  color: "#22d3ee" },
+    { name: "Rental",  value: 6300  * monthMultiplier, color: "#6366f1" },
+    { name: "Utility", value: 600   * monthMultiplier, color: "#f59e0b" },
+    { name: "Helper",  value: 800   * monthMultiplier, color: "#10b981" },
+    { name: "CC",      value: totalCreditCard,          color: "#ec4899" },
+    { name: "Savings", value: Math.max(netSavings, 0), color: "#22d3ee" },
   ];
 
+  const moLabel = monthMultiplier > 1 ? ` ×${monthMultiplier}mo` : "";
   const rows = [
-    { label: "Gross Salary",  value: MONTHLY_SALARY, positive: true,  color: "#10b981" },
-    { label: "Rental",        value: 6300,           positive: false, color: "#6366f1" },
-    { label: "Utility Bills", value: 600,            positive: false, color: "#f59e0b" },
-    { label: "Helper",        value: 800,            positive: false, color: "#10b981" },
-    { label: "Credit Card",   value: totalCreditCard, positive: false, color: "#ec4899" },
+    { label: `Gross Salary${moLabel}`, value: salary,               positive: true,  color: "#10b981" },
+    { label: `Rental${moLabel}`,       value: 6300 * monthMultiplier, positive: false, color: "#6366f1" },
+    { label: `Utility Bills${moLabel}`,value: 600  * monthMultiplier, positive: false, color: "#f59e0b" },
+    { label: `Helper${moLabel}`,       value: 800  * monthMultiplier, positive: false, color: "#10b981" },
+    { label: "Credit Card",            value: totalCreditCard,        positive: false, color: "#ec4899" },
   ];
 
   const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ name: string; value: number; payload: { color: string } }> }) => {
@@ -127,7 +130,7 @@ export default function OverallSummary({ totalCreditCard }: OverallSummaryProps)
               border: `1px solid ${netSavings >= 0 ? "rgba(52,211,153,0.2)" : "rgba(239,68,68,0.2)"}`,
             }}>
               <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: t.label }}>
-                Net Monthly {netSavings >= 0 ? "Savings" : "Deficit"}
+                {monthMultiplier > 1 ? `Net ${monthMultiplier}-Month` : "Net Monthly"} {netSavings >= 0 ? "Savings" : "Deficit"}
               </div>
               <div style={{
                 fontSize: "clamp(2rem, 3vw, 2.8rem)", fontWeight: 900, fontVariantNumeric: "tabular-nums", marginTop: "8px",

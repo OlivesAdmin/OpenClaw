@@ -49,23 +49,28 @@ function DashboardContent() {
     () => monthExpenses.reduce((s, e) => s + e.amount, 0),
     [monthExpenses]
   );
-  // For header/allocation bar, always use per-month income (17K is monthly)
-  const effectiveIncome = selectedMonth === "all"
-    ? MONTHLY_SALARY  // show single-month view even in "all" mode for summary cards
-    : MONTHLY_SALARY;
-  const totalFixed = FIXED_EXPENSES.reduce((s, e) => s + e.amount, 0);
-  // In "all" mode, compare against monthly income (CC total is still shown as-is)
-  const netSavings = MONTHLY_SALARY - totalFixed - (selectedMonth === "all" ? 0 : totalCC);
-  const savingsPct = selectedMonth === "all"
-    ? "—"
-    : ((netSavings / MONTHLY_SALARY) * 100).toFixed(1);
+
+  // Number of distinct calendar months covered by uploaded data
+  const uploadedMonthCount = useMemo(() => {
+    if (creditCardExpenses.length === 0) return 1;
+    const months = new Set(creditCardExpenses.map(e => e.date.slice(0, 7)));
+    return Math.max(months.size, 1);
+  }, [creditCardExpenses]);
+
+  // In "all" mode: salary and fixed scale with number of months covered
+  const monthMultiplier = selectedMonth === "all" ? uploadedMonthCount : 1;
+  const effectiveSalary = MONTHLY_SALARY * monthMultiplier;
+  const totalFixed      = FIXED_EXPENSES.reduce((s, e) => s + e.amount, 0);
+  const effectiveFixed  = totalFixed * monthMultiplier;
+  const netSavings      = effectiveSalary - effectiveFixed - totalCC;
+  const savingsPct      = ((netSavings / effectiveSalary) * 100).toFixed(1);
 
   const segments = [
-    { label: "Rental",  value: 6300,  color: "#6366f1" },
-    { label: "Utility", value: 600,   color: "#f59e0b" },
-    { label: "Helper",  value: 800,   color: "#10b981" },
-    { label: "CC",      value: totalCC, color: "#ec4899" },
-    { label: "Savings", value: Math.max(MONTHLY_SALARY - totalFixed - totalCC, 0), color: "#22d3ee" },
+    { label: "Rental",  value: 6300  * monthMultiplier, color: "#6366f1" },
+    { label: "Utility", value: 600   * monthMultiplier, color: "#f59e0b" },
+    { label: "Helper",  value: 800   * monthMultiplier, color: "#10b981" },
+    { label: "CC",      value: totalCC,                  color: "#ec4899" },
+    { label: "Savings", value: Math.max(netSavings, 0),  color: "#22d3ee" },
   ];
 
   if (!isLoaded) {
@@ -130,7 +135,7 @@ function DashboardContent() {
               {/* Pills + theme toggle */}
               <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", justifyContent: "flex-end" }}>
                 {[
-                  { icon: <Wallet size={11} />, text: `${formatCurrency(MONTHLY_SALARY)}/mo`, c1: "#10b981", bg: theme === "dark" ? "rgba(16,185,129,0.12)" : "rgba(16,185,129,0.1)", b: theme === "dark" ? "rgba(16,185,129,0.2)" : "rgba(16,185,129,0.2)", hideOnMobile: false },
+                  { icon: <Wallet size={11} />, text: selectedMonth === "all" && uploadedMonthCount > 1 ? `${formatCurrency(effectiveSalary)} (${uploadedMonthCount}mo)` : `${formatCurrency(MONTHLY_SALARY)}/mo`, c1: "#10b981", bg: theme === "dark" ? "rgba(16,185,129,0.12)" : "rgba(16,185,129,0.1)", b: theme === "dark" ? "rgba(16,185,129,0.2)" : "rgba(16,185,129,0.2)", hideOnMobile: false },
                   { icon: <Target size={11} />,  text: `CC ${formatCurrency(CREDIT_CARD_BUDGET)}`, c1: "#6366f1", bg: theme === "dark" ? "rgba(99,102,241,0.12)" : "rgba(99,102,241,0.08)", b: theme === "dark" ? "rgba(99,102,241,0.2)" : "rgba(99,102,241,0.15)", hideOnMobile: true },
                   { icon: <Activity size={10} />, text: `${savingsPct}% saved`, c1: "#22d3ee", bg: theme === "dark" ? "rgba(34,211,238,0.1)" : "rgba(34,211,238,0.08)", b: theme === "dark" ? "rgba(34,211,238,0.18)" : "rgba(34,211,238,0.15)", hideOnMobile: false },
                 ].filter(pill => !isMobile || !pill.hideOnMobile).map((pill, i) => (
@@ -225,7 +230,13 @@ function DashboardContent() {
         <main style={{ padding: isMobile ? "16px 14px 48px" : "28px 24px 64px", maxWidth: "1400px", margin: "0 auto" }}>
           {/* Row 1: Summary Cards — 2 col mobile, 4 col desktop */}
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: isMobile ? "12px" : "16px", marginBottom: isMobile ? "14px" : "20px" }}>
-            <SummaryCards totalCreditCard={totalCC} selectedMonth={selectedMonth} />
+            <SummaryCards
+              totalCreditCard={totalCC}
+              selectedMonth={selectedMonth}
+              effectiveSalary={effectiveSalary}
+              effectiveFixed={effectiveFixed}
+              monthMultiplier={monthMultiplier}
+            />
           </div>
 
           {/* Row 2: Charts + CC | Gauge + Fixed + Budget + Upload */}
@@ -246,12 +257,12 @@ function DashboardContent() {
               <StatementUpload onUpload={addStatement} />
               <FixedExpenses />
               <div style={{ gridColumn: isMobile ? "1 / -1" : "auto" }}>
-                <BudgetTracker expenses={monthExpenses} />
+                <BudgetTracker expenses={monthExpenses} monthMultiplier={monthMultiplier} />
               </div>
             </div>
           </div>
 
-          <OverallSummary totalCreditCard={totalCC} />
+          <OverallSummary totalCreditCard={totalCC} monthMultiplier={monthMultiplier} />
         </main>
       </div>
     </div>

@@ -8,22 +8,26 @@ import { useTheme } from "@/lib/theme";
 interface SummaryCardsProps {
   totalCreditCard: number;
   selectedMonth: string;
+  effectiveSalary: number;
+  effectiveFixed: number;
+  monthMultiplier: number;
 }
 
-export default function SummaryCards({ totalCreditCard }: SummaryCardsProps) {
+export default function SummaryCards({ totalCreditCard, effectiveSalary, effectiveFixed, monthMultiplier }: SummaryCardsProps) {
   const { theme, t } = useTheme();
-  const totalFixed    = FIXED_EXPENSES.reduce((s, e) => s + e.amount, 0);
-  const totalExpenses = totalFixed + totalCreditCard;
-  const netSavings    = MONTHLY_SALARY - totalExpenses;
-  const ccPct         = Math.min((totalCreditCard / CREDIT_CARD_BUDGET) * 100, 100);
-  const overBudget    = totalCreditCard > CREDIT_CARD_BUDGET;
-  const expensePct    = (totalExpenses / MONTHLY_SALARY) * 100;
-  const savingsRate   = (netSavings / MONTHLY_SALARY) * 100;
+  const ccBudget      = CREDIT_CARD_BUDGET * monthMultiplier;
+  const totalExpenses = effectiveFixed + totalCreditCard;
+  const netSavings    = effectiveSalary - totalExpenses;
+  const ccPct         = Math.min((totalCreditCard / ccBudget) * 100, 100);
+  const overBudget    = totalCreditCard > ccBudget;
+  const expensePct    = (totalExpenses / effectiveSalary) * 100;
+  const savingsRate   = (netSavings / effectiveSalary) * 100;
 
   const cards = [
     {
-      label: "Monthly Salary", sub: "Fixed income · SGD",
-      value: formatCurrency(MONTHLY_SALARY),
+      label: monthMultiplier > 1 ? `${monthMultiplier}-Month Income` : "Monthly Salary",
+      sub: monthMultiplier > 1 ? `${formatCurrency(MONTHLY_SALARY)}/mo × ${monthMultiplier}` : "Fixed income · SGD",
+      value: formatCurrency(effectiveSalary),
       Icon: Wallet, TrendIcon: TrendingUp, trendText: "Stable", trendGood: true,
       c1: "#10b981", c2: "#34d399", progress: 100,
     },
@@ -36,7 +40,7 @@ export default function SummaryCards({ totalCreditCard }: SummaryCardsProps) {
       progress: Math.min(expensePct, 100),
     },
     {
-      label: "CC Budget Used", sub: overBudget ? `Over by ${formatCurrency(totalCreditCard - CREDIT_CARD_BUDGET)}` : `${formatCurrency(CREDIT_CARD_BUDGET - totalCreditCard)} left`,
+      label: "CC Budget Used", sub: overBudget ? `Over by ${formatCurrency(totalCreditCard - ccBudget)}` : `${formatCurrency(ccBudget - totalCreditCard)} left`,
       value: `${ccPct.toFixed(1)}%`,
       Icon: overBudget ? AlertTriangle : CreditCard, TrendIcon: overBudget ? TrendingUp : TrendingDown,
       trendText: overBudget ? "Over" : "On Track", trendGood: !overBudget,

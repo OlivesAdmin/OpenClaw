@@ -14,7 +14,7 @@ interface AppData {
 const defaultData: AppData = {
   statements: [],
   creditCardExpenses: [],
-  selectedMonth: new Date().toISOString().slice(0, 7),
+  selectedMonth: "all",
 };
 
 export function useAppStore() {
