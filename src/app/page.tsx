@@ -39,7 +39,14 @@ function DashboardContent() {
     addStatement, removeStatement, setSelectedMonth, updateExpenseCategory, clearAll,
   } = useAppStore();
 
-  const totalCC = useMemo(() => creditCardExpenses.reduce((s, e) => s + e.amount, 0), [creditCardExpenses]);
+  const monthExpenses = useMemo(
+    () => creditCardExpenses.filter(e => e.date.startsWith(selectedMonth)),
+    [creditCardExpenses, selectedMonth]
+  );
+  const totalCC = useMemo(
+    () => monthExpenses.reduce((s, e) => s + e.amount, 0),
+    [monthExpenses]
+  );
   const totalFixed = FIXED_EXPENSES.reduce((s, e) => s + e.amount, 0);
   const netSavings = MONTHLY_SALARY - totalFixed - totalCC;
   const savingsPct = ((netSavings / MONTHLY_SALARY) * 100).toFixed(1);
@@ -215,9 +222,9 @@ function DashboardContent() {
           {/* Row 2: Charts + CC | Gauge + Fixed + Budget + Upload */}
           <div style={{ display: "grid", gridTemplateColumns: isDesktop ? "1fr 380px" : "1fr", gap: "16px", marginBottom: "16px" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "20px", minWidth: 0 }}>
-              <Charts expenses={creditCardExpenses} />
+              <Charts expenses={monthExpenses} />
               <CreditCardExpenses
-                statements={statements} expenses={creditCardExpenses}
+                statements={statements} expenses={monthExpenses}
                 selectedMonth={selectedMonth} onRemoveStatement={removeStatement}
                 onUpdateCategory={updateExpenseCategory} onMonthChange={setSelectedMonth}
               />
@@ -230,7 +237,7 @@ function DashboardContent() {
               <StatementUpload onUpload={addStatement} />
               <FixedExpenses />
               <div style={{ gridColumn: isMobile ? "1 / -1" : "auto" }}>
-                <BudgetTracker expenses={creditCardExpenses} />
+                <BudgetTracker expenses={monthExpenses} />
               </div>
             </div>
           </div>
