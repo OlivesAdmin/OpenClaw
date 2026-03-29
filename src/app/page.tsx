@@ -40,16 +40,25 @@ function DashboardContent() {
   } = useAppStore();
 
   const monthExpenses = useMemo(
-    () => creditCardExpenses.filter(e => e.date.startsWith(selectedMonth)),
+    () => selectedMonth === "all"
+      ? creditCardExpenses
+      : creditCardExpenses.filter(e => e.date.startsWith(selectedMonth)),
     [creditCardExpenses, selectedMonth]
   );
   const totalCC = useMemo(
     () => monthExpenses.reduce((s, e) => s + e.amount, 0),
     [monthExpenses]
   );
+  // For header/allocation bar, always use per-month income (17K is monthly)
+  const effectiveIncome = selectedMonth === "all"
+    ? MONTHLY_SALARY  // show single-month view even in "all" mode for summary cards
+    : MONTHLY_SALARY;
   const totalFixed = FIXED_EXPENSES.reduce((s, e) => s + e.amount, 0);
-  const netSavings = MONTHLY_SALARY - totalFixed - totalCC;
-  const savingsPct = ((netSavings / MONTHLY_SALARY) * 100).toFixed(1);
+  // In "all" mode, compare against monthly income (CC total is still shown as-is)
+  const netSavings = MONTHLY_SALARY - totalFixed - (selectedMonth === "all" ? 0 : totalCC);
+  const savingsPct = selectedMonth === "all"
+    ? "—"
+    : ((netSavings / MONTHLY_SALARY) * 100).toFixed(1);
 
   const segments = [
     { label: "Rental",  value: 6300,  color: "#6366f1" },
