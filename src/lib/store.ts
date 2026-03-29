@@ -100,6 +100,11 @@ export function useAppStore() {
     [data, save]
   );
 
+  const clearAll = useCallback(() => {
+    try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+    setData(defaultData);
+  }, []);
+
   return {
     statements: data.statements,
     creditCardExpenses: data.creditCardExpenses,
@@ -109,6 +114,7 @@ export function useAppStore() {
     removeStatement,
     setSelectedMonth,
     updateExpenseCategory,
+    clearAll,
   };
 }
 

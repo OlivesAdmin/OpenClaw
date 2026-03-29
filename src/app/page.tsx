@@ -27,7 +27,7 @@ import SavingsGauge from "@/components/SavingsGauge";
 import OverallSummary from "@/components/OverallSummary";
 import { useAppStore, MONTHLY_SALARY, FIXED_EXPENSES, CREDIT_CARD_BUDGET } from "@/lib/store";
 import { formatCurrency } from "@/lib/utils";
-import { Gem, Wallet, Target, Activity, Sparkles, Sun, Moon } from "lucide-react";
+import { Gem, Wallet, Target, Activity, Sparkles, Sun, Moon, Trash2 } from "lucide-react";
 
 function DashboardContent() {
   const { theme, toggle, t } = useTheme();
@@ -36,7 +36,7 @@ function DashboardContent() {
   const isDesktop = bp === "desktop";
   const {
     statements, creditCardExpenses, selectedMonth, isLoaded,
-    addStatement, removeStatement, setSelectedMonth, updateExpenseCategory,
+    addStatement, removeStatement, setSelectedMonth, updateExpenseCategory, clearAll,
   } = useAppStore();
 
   const totalCC = useMemo(() => creditCardExpenses.reduce((s, e) => s + e.amount, 0), [creditCardExpenses]);
@@ -127,6 +127,22 @@ function DashboardContent() {
                     <span style={{ fontSize: "12px", fontWeight: 700, color: pill.c1 }}>{pill.text}</span>
                   </div>
                 ))}
+
+                {/* Reset button */}
+                <button
+                  onClick={() => { if (confirm("Clear all uploaded statements and reset data?")) clearAll(); }}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    width: "36px", height: "36px", borderRadius: "12px",
+                    background: "rgba(239,68,68,0.08)",
+                    border: "1px solid rgba(239,68,68,0.2)",
+                    cursor: "pointer", transition: "all 0.3s",
+                    color: "#ef4444",
+                  }}
+                  title="Clear all data and reset"
+                >
+                  <Trash2 size={15} />
+                </button>
 
                 {/* Theme toggle */}
                 <button
