@@ -13,11 +13,38 @@ import { groupByCategory, formatCurrency } from "@/lib/utils";
 import { useTheme } from "@/lib/theme";
 
 interface ChartsProps {
-  expenses: CreditCardExpense[];
+  expenses: CreditCardExpense[];      // current selected month
+  allExpenses: CreditCardExpense[];   // all uploaded months (for trend)
 }
 
-function buildMonthlyData(currentCC: number) {
+const MONTH_LABELS: Record<string, string> = {
+  "01": "Jan","02": "Feb","03": "Mar","04": "Apr","05": "May","06": "Jun",
+  "07": "Jul","08": "Aug","09": "Sep","10": "Oct","11": "Nov","12": "Dec",
+};
+
+function buildMonthlyData(allExpenses: CreditCardExpense[], currentCC: number) {
   const fixed = FIXED_EXPENSES.reduce((s, e) => s + e.amount, 0);
+
+  // Group real uploaded data by YYYY-MM
+  const byMonth: Record<string, number> = {};
+  for (const e of allExpenses) {
+    const ym = e.date.slice(0, 7);
+    byMonth[ym] = (byMonth[ym] || 0) + e.amount;
+  }
+
+  const realMonths = Object.keys(byMonth).sort();
+
+  if (realMonths.length > 0) {
+    return realMonths.map((ym) => {
+      const cc = byMonth[ym];
+      const expenses = fixed + cc;
+      const savings = MONTHLY_SALARY - expenses;
+      const [, mm] = ym.split("-");
+      return { month: MONTH_LABELS[mm] || mm, income: MONTHLY_SALARY, expenses, savings: Math.max(savings, 0), cc };
+    });
+  }
+
+  // Fallback: simulated when no data uploaded
   const months = ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
   const ccHistory = [7200, 6800, 9100, 7500, 8200, currentCC || 0];
   return months.map((month, i) => {
@@ -28,14 +55,14 @@ function buildMonthlyData(currentCC: number) {
   });
 }
 
-export default function Charts({ expenses }: ChartsProps) {
+export default function Charts({ expenses, allExpenses }: ChartsProps) {
   const { theme, t } = useTheme();
   const [activeChart, setActiveChart] = useState<"allocation" | "trend" | "breakdown">("allocation");
 
   const totalCC    = expenses.reduce((s, e) => s + e.amount, 0);
   const totalFixed = FIXED_EXPENSES.reduce((s, e) => s + e.amount, 0);
   const netSavings = MONTHLY_SALARY - totalFixed - totalCC;
-  const monthlyData = buildMonthlyData(totalCC);
+  const monthlyData = buildMonthlyData(allExpenses, totalCC);
 
   const allocationData = [
     ...FIXED_EXPENSES.map((e) => ({
@@ -143,9 +170,9 @@ export default function Charts({ expenses }: ChartsProps) {
           <div>
             <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
               {[
-                { label: "Avg Savings", val: formatCurrency(monthlyData.reduce((s, d) => s + d.savings, 0) / 6), c: "#22d3ee" },
+                { label: "Avg Savings", val: formatCurrency(monthlyData.reduce((s, d) => s + d.savings, 0) / monthlyData.length), c: "#22d3ee" },
                 { label: "This Month",  val: formatCurrency(Math.max(netSavings, 0)), c: "#34d399" },
-                { label: "Target",      val: formatCurrency(MONTHLY_SALARY * 0.5), c: "#a78bfa" },
+                { label: "Target",      val: formatCurrency(MONTHLY_SALARY * 0.4), c: "#a78bfa" },
               ].map((item) => (
                 <div key={item.label} style={{
                   flex: 1, padding: "10px 12px", borderRadius: "14px",
