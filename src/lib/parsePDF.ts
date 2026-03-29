@@ -1,11 +1,5 @@
 /**
  * PDF bank statement parser for Singapore banks (DBS, OCBC, UOB, Citi, AMEX, StanChart).
- *
- * Strategy:
- *  1. Extract text items with their x/y positions from each page.
- *  2. Reconstruct rows by snapping items to y-buckets.
- *  3. Try to parse each row as a transaction (date + description + debit amount).
- *  4. Fall back to a raw line-regex pass if position-based pass yields nothing.
  */
 
 import type { CreditCardExpense } from "./types";
@@ -15,11 +9,9 @@ import { categorizeExpense } from "./utils";
 
 async function getPdfLib() {
   const pdfjsLib = await import("pdfjs-dist");
-
   if (typeof window !== "undefined" && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
     pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
   }
-
   return pdfjsLib;
 }
 
@@ -35,15 +27,15 @@ const MONTH_MAP: Record<string, string> = {
 function toISODate(raw: string): string {
   raw = raw.trim();
 
-  // DD/MM/YYYY  or  DD-MM-YYYY
+  // DD/MM/YYYY or DD-MM-YYYY
   let m = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
   if (m) return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
 
-  // YYYY-MM-DD (already ISO)
+  // YYYY-MM-DD
   m = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (m) return raw;
 
-  // DD MMM YYYY  or  DD MMM YY  (e.g. "12 Mar 2026" / "12 Mar 26")
+  // DD MMM YYYY or DD MMM YY (e.g. "12 Mar 2026" / "12 Mar 26")
   m = raw.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{2,4})$/);
   if (m) {
     const mo = MONTH_MAP[m[2].toLowerCase()];
@@ -53,43 +45,52 @@ function toISODate(raw: string): string {
     }
   }
 
-  // MMM DD YYYY  (e.g. "Mar 12 2026")
+  // DD MMM (no year, e.g. DBS "12 Mar")
+  m = raw.match(/^(\d{1,2})\s+([A-Za-z]{3,9})$/);
+  if (m) {
+    const mo = MONTH_MAP[m[2].toLowerCase()];
+    if (mo) {
+      const yr = new Date().getFullYear();
+      return `${yr}-${mo}-${m[1].padStart(2, "0")}`;
+    }
+  }
+
+  // MMM DD YYYY (e.g. "Mar 12 2026")
   m = raw.match(/^([A-Za-z]+)\s+(\d{1,2})\s+(\d{4})$/);
   if (m) {
     const mo = MONTH_MAP[m[1].toLowerCase()];
     if (mo) return `${m[3]}-${mo}-${m[2].padStart(2, "0")}`;
   }
 
-  // MM/DD  (Citi – no year, assume current year)
+  // MM/DD (Citi – no year)
   m = raw.match(/^(\d{2})\/(\d{2})$/);
   if (m) {
     const yr = new Date().getFullYear();
     return `${yr}-${m[1]}-${m[2]}`;
   }
 
-  return raw; // best-effort
+  return raw;
 }
 
 function looksLikeDate(s: string): boolean {
   s = s.trim();
   return (
     /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}$/.test(s) ||
-    /^\d{1,2}\s+[A-Za-z]{3,}\s+\d{2,4}$/.test(s) ||
-    /^[A-Za-z]{3,}\s+\d{1,2}\s+\d{4}$/.test(s) ||
+    /^\d{1,2}\s+[A-Za-z]{3,9}\s+\d{2,4}$/.test(s) ||
+    /^\d{1,2}\s+[A-Za-z]{3,9}$/.test(s) ||
+    /^[A-Za-z]{3,9}\s+\d{1,2}\s+\d{4}$/.test(s) ||
     /^\d{2}\/\d{2}$/.test(s)
   );
 }
 
 // ─── Amount helpers ────────────────────────────────────────────────────────────
 
-/** Parse "1,234.56" → 1234.56 */
 function toAmount(s: string): number {
   return parseFloat(s.replace(/,/g, "")) || 0;
 }
 
-/** Match a debit amount at the end of a string.
- *  Ignores trailing CR (credit) markers — we only want debits. */
-const DEBIT_AT_END = /(\d{1,3}(?:,\d{3})*\.\d{2})\s*(?:DR|Debit)?\s*$/i;
+// Amount anywhere in the string (not just at end)
+const AMOUNT_RE = /\b(\d{1,3}(?:,\d{3})*\.\d{2})\b/g;
 const CREDIT_MARKER = /\b(CR|Credit|Cr\.)\b/i;
 
 // ─── Text extraction ──────────────────────────────────────────────────────────
@@ -102,8 +103,8 @@ interface RawItem {
 
 async function extractPageLines(file: File): Promise<string[][]> {
   const pdfjsLib = await getPdfLib();
-  const buffer   = await file.arrayBuffer();
-  const pdf      = await pdfjsLib.getDocument({
+  const buffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({
     data: buffer,
     useWorkerFetch: false,
     isEvalSupported: false,
@@ -113,10 +114,9 @@ async function extractPageLines(file: File): Promise<string[][]> {
   const allPageLines: string[][] = [];
 
   for (let p = 1; p <= pdf.numPages; p++) {
-    const page    = await pdf.getPage(p);
+    const page = await pdf.getPage(p);
     const content = await page.getTextContent({ includeMarkedContent: false });
 
-    // Collect positioned items
     const items: RawItem[] = [];
     for (const raw of content.items) {
       if (!("str" in raw)) continue;
@@ -131,28 +131,26 @@ async function extractPageLines(file: File): Promise<string[][]> {
       continue;
     }
 
-    // Snap y values into buckets so items on the same visual row merge.
-    // Use a generous 6-pixel tolerance to absorb baseline shifts.
-    const BUCKET = 6;
+    // Group items into rows by y-coordinate (8px bucket)
+    const BUCKET = 8;
     const rowMap = new Map<number, RawItem[]>();
-
     for (const item of items) {
       const bucket = Math.round(item.y / BUCKET) * BUCKET;
       if (!rowMap.has(bucket)) rowMap.set(bucket, []);
       rowMap.get(bucket)!.push(item);
     }
 
-    // Sort rows top-to-bottom (PDF y = 0 at bottom, so descending = top-first)
+    // Sort rows top-to-bottom (PDF y=0 at bottom → descending = top first)
     const sortedBuckets = Array.from(rowMap.keys()).sort((a, b) => b - a);
 
     const pageLines: string[] = [];
     for (const bucket of sortedBuckets) {
       const rowItems = rowMap.get(bucket)!.sort((a, b) => a.x - b.x);
-      // Concatenate, inserting a space when x-gap > 8px between items
       let line = rowItems[0].str;
       for (let i = 1; i < rowItems.length; i++) {
-        const gap = rowItems[i].x - (rowItems[i - 1].x + rowItems[i - 1].str.length * 5);
-        line += (gap > 8 ? "  " : "") + rowItems[i].str;
+        const prevEnd = rowItems[i - 1].x + rowItems[i - 1].str.length * 5;
+        const gap = rowItems[i].x - prevEnd;
+        line += (gap > 6 ? "  " : "") + rowItems[i].str;
       }
       const cleaned = line.replace(/\s{3,}/g, "  ").trim();
       if (cleaned) pageLines.push(cleaned);
@@ -166,90 +164,122 @@ async function extractPageLines(file: File): Promise<string[][]> {
 
 // ─── Transaction parser ────────────────────────────────────────────────────────
 
-/**
- * Many SG bank statements have one of these two structures:
- *
- *  A) Date and amount on the SAME line:
- *     "12 Mar 2026  GRAB SG  -  120.50"
- *
- *  B) Date on its OWN line, description + amount on the NEXT line:
- *     "12 Mar 2026"
- *     "GRAB SG PAYMENT  120.50"
- */
+const DATE_PREFIX_PATTERNS = [
+  /^(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})\s+/,          // DD/MM/YYYY
+  /^(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2})\s+/,           // DD/MM/YY
+  /^(\d{1,2}\s+[A-Za-z]{3,9}\s+\d{2,4})\s+/,         // DD Mon YYYY / DD Mon YY
+  /^(\d{1,2}\s+[A-Za-z]{3,9})\s{2,}/,                 // DD Mon (no year) — needs 2+ spaces
+  /^([A-Za-z]{3,9}\s+\d{1,2}[,\s]+\d{4})\s+/,        // Mon DD YYYY
+  /^(\d{2}\/\d{2})\s+/,                               // MM/DD
+];
+
 function parseTransactions(lines: string[], cardName: string): CreditCardExpense[] {
+  // Log first 30 lines for debugging
+  console.log("[parsePDF] sample lines:", lines.slice(0, 30));
+
   const results: CreditCardExpense[] = [];
+  const seen = new Set<string>();
 
-  // ── Pattern A: date + description + amount on one line ──────────────────────
-  // Try multi-word date patterns by looking for a DATE prefix on each line.
-  const DATE_PREFIX = [
-    /^(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})\s{1,4}/,        // DD/MM/YYYY or DD-MM-YYYY
-    /^(\d{1,2}\s+[A-Za-z]{3,9}\s+\d{2,4})\s{1,4}/,       // DD Mon YYYY / DD Mon YY
-    /^([A-Za-z]{3,9}\s+\d{1,2}[,\s]+\d{4})\s{1,4}/,      // Mon DD, YYYY
-    /^(\d{2}\/\d{2})\s{1,4}/,                              // MM/DD (Citi)
-  ];
+  function addResult(date: string, description: string, amount: number) {
+    if (amount <= 0 || !description || description.length < 2) return;
+    const key = `${date}|${description}|${amount}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    results.push({
+      id: `${cardName}-pdf-${Date.now()}-${results.length}`,
+      date: toISODate(date),
+      description: description.trim(),
+      amount,
+      category: categorizeExpense(description),
+      cardName,
+    });
+  }
 
-  const singleLineResults: CreditCardExpense[] = [];
+  // ── Pass A: date prefix on same line as description + amount ──────────────
   for (const line of lines) {
-    for (const pat of DATE_PREFIX) {
+    if (CREDIT_MARKER.test(line)) continue;
+
+    for (const pat of DATE_PREFIX_PATTERNS) {
       const dm = line.match(pat);
       if (!dm) continue;
 
-      const rest = line.slice(dm[0].length);
-
-      // Skip lines that are pure credit
+      const rest = line.slice(dm[0].length).trim();
+      if (!rest) break;
       if (CREDIT_MARKER.test(rest)) break;
 
-      const am = rest.match(DEBIT_AT_END);
-      if (!am) break;
+      // Find all amounts in the rest; use the LAST one as the transaction amount
+      const amounts = [...rest.matchAll(AMOUNT_RE)];
+      if (amounts.length === 0) break;
 
-      const amount = toAmount(am[1]);
-      if (amount <= 0) break;
-
+      const lastAmt = amounts[amounts.length - 1];
+      const amount = toAmount(lastAmt[1]);
+      const descEnd = rest.lastIndexOf(lastAmt[1]);
       const description = rest
-        .slice(0, rest.lastIndexOf(am[1]))
+        .slice(0, descEnd)
         .replace(/[-–—|]+\s*$/, "")
         .trim();
 
-      if (!description || description.length < 2) break;
-
-      singleLineResults.push({
-        id: `${cardName}-pdf-${Date.now()}-${singleLineResults.length}`,
-        date: toISODate(dm[1]),
-        description,
-        amount,
-        category: categorizeExpense(description),
-        cardName,
-      });
+      addResult(dm[1], description || rest.slice(0, 30), amount);
       break;
     }
   }
 
-  if (singleLineResults.length > 0) {
-    results.push(...singleLineResults);
-  }
+  console.log("[parsePDF] Pass A found:", results.length, "transactions");
 
-  // ── Pattern B: date on one line, next line has description + amount ──────────
+  // ── Pass B: date on its own line, description + amount on next line ─────────
   if (results.length === 0) {
     for (let i = 0; i < lines.length - 1; i++) {
-      if (!looksLikeDate(lines[i].trim())) continue;
+      const trimmed = lines[i].trim();
+      if (!looksLikeDate(trimmed)) continue;
+
       const nextLine = lines[i + 1];
       if (CREDIT_MARKER.test(nextLine)) continue;
-      const am = nextLine.match(DEBIT_AT_END);
-      if (!am) continue;
-      const amount = toAmount(am[1]);
-      if (amount <= 0) continue;
-      const description = nextLine.slice(0, nextLine.lastIndexOf(am[1])).trim();
-      if (!description) continue;
-      results.push({
-        id: `${cardName}-pdf-${Date.now()}-${results.length}`,
-        date: toISODate(lines[i].trim()),
-        description,
-        amount,
-        category: categorizeExpense(description),
-        cardName,
-      });
-      i++; // skip the consumed next line
+
+      const amounts = [...nextLine.matchAll(AMOUNT_RE)];
+      if (amounts.length === 0) continue;
+
+      const lastAmt = amounts[amounts.length - 1];
+      const amount = toAmount(lastAmt[1]);
+      const descEnd = nextLine.lastIndexOf(lastAmt[1]);
+      const description = nextLine.slice(0, descEnd).replace(/[-–—|]+\s*$/, "").trim();
+
+      addResult(trimmed, description || nextLine.slice(0, 30), amount);
+      i++;
     }
+    console.log("[parsePDF] Pass B found:", results.length, "transactions");
+  }
+
+  // ── Pass C: looser scan — any line with a date-like token and an amount ─────
+  if (results.length === 0) {
+    const DATE_ANYWHERE = [
+      /\b(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})\b/,
+      /\b(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2,4})\b/i,
+      /\b(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*)\b/i,
+      /\b(\d{2}\/\d{2})\b/,
+    ];
+
+    for (const line of lines) {
+      if (CREDIT_MARKER.test(line)) continue;
+      const amounts = [...line.matchAll(AMOUNT_RE)];
+      if (amounts.length === 0) continue;
+
+      for (const datePat of DATE_ANYWHERE) {
+        const dm = line.match(datePat);
+        if (!dm) continue;
+
+        const lastAmt = amounts[amounts.length - 1];
+        const amount = toAmount(lastAmt[1]);
+        // Description = everything between date match end and amount start
+        const afterDate = line.slice(dm.index! + dm[0].length);
+        const descEnd = afterDate.lastIndexOf(lastAmt[1]);
+        const description = afterDate.slice(0, descEnd < 0 ? undefined : descEnd)
+          .replace(/[-–—|]+/g, " ").trim();
+
+        addResult(dm[1], description || line.slice(0, 40), amount);
+        break;
+      }
+    }
+    console.log("[parsePDF] Pass C found:", results.length, "transactions");
   }
 
   return results;
@@ -262,16 +292,7 @@ export async function parsePDFToExpenses(
   cardName: string
 ): Promise<CreditCardExpense[]> {
   const pageLines = await extractPageLines(file);
-  const allLines  = pageLines.flat();
-
-  const expenses = parseTransactions(allLines, cardName);
-
-  // De-duplicate (some PDFs repeat pages or running totals)
-  const seen = new Set<string>();
-  return expenses.filter((e) => {
-    const key = `${e.date}|${e.description}|${e.amount}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  console.log("[parsePDF] pages:", pageLines.length, "| total lines:", pageLines.flat().length);
+  const allLines = pageLines.flat();
+  return parseTransactions(allLines, cardName);
 }
