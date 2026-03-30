@@ -4,7 +4,7 @@ import { CheckCircle, AlertTriangle } from "lucide-react";
 import { CREDIT_CARD_BUDGET, FIXED_EXPENSES, MONTHLY_SALARY } from "@/lib/store";
 import { formatCurrency, groupByCategory } from "@/lib/utils";
 import { CreditCardExpense, CATEGORY_COLORS } from "@/lib/types";
-import { useTheme } from "@/lib/theme";
+import { useTheme, useBreakpoint } from "@/lib/theme";
 
 interface BudgetTrackerProps {
   expenses: CreditCardExpense[];
@@ -13,6 +13,7 @@ interface BudgetTrackerProps {
 
 export default function BudgetTracker({ expenses, monthMultiplier = 1 }: BudgetTrackerProps) {
   const { theme, t } = useTheme();
+  const isMobile = useBreakpoint() === "mobile";
   const totalCC    = expenses.reduce((s, e) => s + e.amount, 0);
   const totalFixed = FIXED_EXPENSES.reduce((s, e) => s + e.amount, 0) * monthMultiplier;
   const netSavings = MONTHLY_SALARY * monthMultiplier - totalFixed - totalCC;
@@ -58,7 +59,7 @@ export default function BudgetTracker({ expenses, monthMultiplier = 1 }: BudgetT
         <div style={{ height: "1px", background: t.divider, marginBottom: "20px" }} />
 
         {/* Ring + stats */}
-        <div style={{ display: "flex", alignItems: "center", gap: "20px", marginBottom: "20px" }}>
+        <div style={{ display: "flex", alignItems: "center", flexDirection: isMobile ? "column" : "row", gap: isMobile ? "12px" : "20px", marginBottom: "20px" }}>
           <div style={{ position: "relative", flexShrink: 0 }}>
             <svg width="114" height="114" viewBox="0 0 114 114">
               <circle cx="57" cy="57" r={r} fill="none" stroke={t.progressTrack} strokeWidth="9" />

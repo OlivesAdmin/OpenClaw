@@ -1,21 +1,7 @@
 "use client";
 
 import { useMemo, useEffect, useState } from "react";
-import { ThemeProvider, useTheme } from "@/lib/theme";
-
-function useBreakpoint() {
-  const [bp, setBp] = useState<"mobile" | "tablet" | "desktop">("desktop");
-  useEffect(() => {
-    const update = () => {
-      const w = window.innerWidth;
-      setBp(w < 640 ? "mobile" : w < 1024 ? "tablet" : "desktop");
-    };
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-  return bp;
-}
+import { ThemeProvider, useTheme, useBreakpoint } from "@/lib/theme";
 import Background from "@/components/Background";
 import SummaryCards from "@/components/SummaryCards";
 import FixedExpenses from "@/components/FixedExpenses";

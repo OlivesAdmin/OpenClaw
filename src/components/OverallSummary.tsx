@@ -4,7 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 import { TrendingUp, TrendingDown, Lightbulb } from "lucide-react";
 import { FIXED_EXPENSES, MONTHLY_SALARY, CREDIT_CARD_BUDGET } from "@/lib/store";
 import { formatCurrency } from "@/lib/utils";
-import { useTheme } from "@/lib/theme";
+import { useTheme, useBreakpoint } from "@/lib/theme";
 
 interface OverallSummaryProps {
   totalCreditCard: number;
@@ -13,6 +13,8 @@ interface OverallSummaryProps {
 
 export default function OverallSummary({ totalCreditCard, monthMultiplier = 1 }: OverallSummaryProps) {
   const { theme, t } = useTheme();
+  const bp = useBreakpoint();
+  const isMobile = bp === "mobile";
   const salary        = MONTHLY_SALARY * monthMultiplier;
   const totalFixed    = FIXED_EXPENSES.reduce((s, e) => s + e.amount, 0) * monthMultiplier;
   const totalExpenses = totalFixed + totalCreditCard;
@@ -77,7 +79,7 @@ export default function OverallSummary({ totalCreditCard, monthMultiplier = 1 }:
 
         <div style={{ height: "1px", background: t.divider, marginBottom: "24px" }} />
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? "20px" : "32px" }}>
           {/* Left: chart + income statement */}
           <div>
             <div style={{ height: 160, marginBottom: "24px" }}>

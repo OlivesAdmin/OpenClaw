@@ -6,7 +6,7 @@ import { UploadCloud, FileText, FileSpreadsheet, AlertCircle, Info, CheckCircle2
 import { Statement } from "@/lib/types";
 import { parseCSVToExpenses } from "@/lib/utils";
 import { parsePDFToExpenses } from "@/lib/parsePDF";
-import { useTheme } from "@/lib/theme";
+import { useTheme, useBreakpoint } from "@/lib/theme";
 
 interface StatementUploadProps {
   onUpload: (statement: Statement) => void;
@@ -14,6 +14,7 @@ interface StatementUploadProps {
 
 export default function StatementUpload({ onUpload }: StatementUploadProps) {
   const { theme, t } = useTheme();
+  const isMobile = useBreakpoint() === "mobile";
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState("");
@@ -146,7 +147,7 @@ export default function StatementUpload({ onUpload }: StatementUploadProps) {
         <div style={{ height: "1px", background: t.divider, marginBottom: "20px" }} />
 
         {/* Selectors */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
           <div>
             <label style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: t.label, display: "block", marginBottom: "6px" }}>Card</label>
             <select
