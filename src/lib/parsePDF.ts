@@ -7,10 +7,22 @@ import { categorizeExpense } from "./utils";
 
 // ─── PDF.js dynamic import ────────────────────────────────────────────────────
 
+// Polyfill Promise.withResolvers (ES2024) — required by pdfjs v5.
+// Safari < 17.4 and older iOS devices don't have it natively.
+if (typeof window !== "undefined" && typeof (Promise as any).withResolvers === "undefined") {
+  (Promise as any).withResolvers = function <T = unknown>() {
+    let resolve!: (value: T | PromiseLike<T>) => void;
+    let reject!: (reason?: unknown) => void;
+    const promise = new Promise<T>((r, j) => { resolve = r; reject = j; });
+    return { promise, resolve, reject };
+  };
+}
+
 async function getPdfLib() {
   const pdfjsLib = await import("pdfjs-dist");
   if (typeof window !== "undefined" && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+    // Use the compat wrapper which polyfills Promise.withResolvers inside the worker thread
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.compat.mjs";
   }
   return pdfjsLib;
 }
