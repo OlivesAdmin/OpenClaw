@@ -38,16 +38,19 @@ export default function CreditCardExpenses({
   });
   const total = filtered.reduce((s, e) => s + e.amount, 0);
 
-  // Per-statement totals filtered to current month selection
-  const stmtMonthTotals = statements.map(s => ({
-    ...s,
-    monthTotal: s.expenses
-      .filter(e => selectedMonth === "all" || e.date.startsWith(selectedMonth))
-      .reduce((sum, e) => sum + e.amount, 0),
-    monthCount: s.expenses
-      .filter(e => selectedMonth === "all" || e.date.startsWith(selectedMonth)).length,
-  }));
-  const grandTotal = stmtMonthTotals.reduce((sum, s) => sum + s.monthTotal, 0);
+  // Per-statement totals computed from the SAME filtered expenses prop the Transactions tab uses
+  // This ensures Grand Total always matches the Transactions tab total
+  const stmtMonthTotals = statements.map(s => {
+    const stmtIds = new Set(s.expenses.map(e => e.id));
+    const matching = expenses.filter(e => stmtIds.has(e.id));
+    return {
+      ...s,
+      monthTotal: matching.reduce((sum, e) => sum + e.amount, 0),
+      monthCount: matching.length,
+    };
+  });
+  // Grand Total = exact same sum as Transactions tab
+  const grandTotal = expenses.reduce((sum, e) => sum + e.amount, 0);
 
   return (
     <div className="fade-in-up" style={{
