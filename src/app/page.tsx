@@ -39,27 +39,35 @@ function DashboardContent() {
     addStatement, removeStatement, setSelectedMonth, updateExpenseCategory, clearAll,
   } = useAppStore();
 
-  const monthExpenses = useMemo(
-    () => selectedMonth === "all"
-      ? creditCardExpenses
-      : creditCardExpenses.filter(e => e.date.startsWith(selectedMonth)),
-    [creditCardExpenses, selectedMonth]
-  );
+  // Determine the tracking year (most recent year in uploaded data, defaults to current year)
+  const trackingYear = useMemo(() => {
+    if (creditCardExpenses.length === 0) return new Date().getFullYear();
+    return creditCardExpenses.reduce((max, e) => {
+      const y = parseInt(e.date.slice(0, 4));
+      return isNaN(y) ? max : Math.max(max, y);
+    }, new Date().getFullYear());
+  }, [creditCardExpenses]);
+
+  const monthExpenses = useMemo(() => {
+    if (selectedMonth === "all") {
+      // Only include expenses from the tracking year (2026) — exclude billing-cycle bleed from Dec 2025
+      return creditCardExpenses.filter(e => e.date.startsWith(String(trackingYear)));
+    }
+    return creditCardExpenses.filter(e => e.date.startsWith(selectedMonth));
+  }, [creditCardExpenses, selectedMonth, trackingYear]);
+
   const totalCC = useMemo(
     () => monthExpenses.reduce((s, e) => s + e.amount, 0),
     [monthExpenses]
   );
 
-  // Number of distinct calendar months covered by uploaded data
+  // Count distinct months in the tracking year only (Jan/Feb/Mar = 3, not 4)
   const uploadedMonthCount = useMemo(() => {
-    if (creditCardExpenses.length === 0) return 1;
-    const allMonths = creditCardExpenses.map(e => e.date.slice(0, 7)).filter(m => /^\d{4}-\d{2}$/.test(m));
-    if (allMonths.length === 0) return 1;
-    // Only count months from the most recent year (billing overlap can add previous-year months)
-    const maxYear = allMonths.reduce((max, m) => Math.max(max, parseInt(m.slice(0, 4))), 0);
-    const thisYearMonths = new Set(allMonths.filter(m => m.startsWith(String(maxYear))));
-    return Math.max(thisYearMonths.size, 1);
-  }, [creditCardExpenses]);
+    if (monthExpenses.length === 0 && selectedMonth === "all") return 1;
+    if (selectedMonth !== "all") return 1;
+    const months = new Set(monthExpenses.map(e => e.date.slice(0, 7)));
+    return Math.max(months.size, 1);
+  }, [monthExpenses, selectedMonth]);
 
   // In "all" mode: salary and fixed scale with number of months covered
   const monthMultiplier = selectedMonth === "all" ? uploadedMonthCount : 1;
