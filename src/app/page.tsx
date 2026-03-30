@@ -50,24 +50,23 @@ function DashboardContent() {
 
   const monthExpenses = useMemo(() => {
     if (selectedMonth === "all") {
-      // Only include expenses from the tracking year (2026) — exclude billing-cycle bleed from Dec 2025
-      return creditCardExpenses.filter(e => e.date.startsWith(String(trackingYear)));
+      // Only include expenses up to the current month — excludes billing bleed
+      // (e.g. Dec dates without year get parsed as Dec 2026, a future month)
+      const now = new Date();
+      const cutoff = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+      return creditCardExpenses.filter(e => e.date.slice(0, 7) <= cutoff);
     }
     return creditCardExpenses.filter(e => e.date.startsWith(selectedMonth));
-  }, [creditCardExpenses, selectedMonth, trackingYear]);
+  }, [creditCardExpenses, selectedMonth]);
 
   const totalCC = useMemo(
     () => monthExpenses.reduce((s, e) => s + e.amount, 0),
     [monthExpenses]
   );
 
-  // Count distinct months in the tracking year only (Jan/Feb/Mar = 3, not 4)
-  const uploadedMonthCount = useMemo(() => {
-    if (monthExpenses.length === 0 && selectedMonth === "all") return 1;
-    if (selectedMonth !== "all") return 1;
-    const months = new Set(monthExpenses.map(e => e.date.slice(0, 7)));
-    return Math.max(months.size, 1);
-  }, [monthExpenses, selectedMonth]);
+  // Use number of uploaded statement FILES as the month count — immune to date parsing quirks
+  // (e.g. Dec dates without year get assigned to Dec 2026, inflating the month count)
+  const uploadedMonthCount = Math.max(statements.length, 1);
 
   // In "all" mode: salary and fixed scale with number of months covered
   const monthMultiplier = selectedMonth === "all" ? uploadedMonthCount : 1;
