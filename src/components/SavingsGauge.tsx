@@ -68,16 +68,24 @@ export default function SavingsGauge({ totalCC, monthMultiplier = 1 }: SavingsGa
               <RadialBar background={{ fill: t.progressTrack }} dataKey="value" angleAxisId={0} cornerRadius={8} />
             </RadialBarChart>
           </ResponsiveContainer>
-          <div style={{ position: "absolute", bottom: "20px", left: "50%", transform: "translateX(-50%)", textAlign: "center" }}>
+          <div style={{ position: "absolute", bottom: "20px", left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap" }}>
             <div style={{
-              fontSize: "36px", fontWeight: 900, letterSpacing: "-0.06em", lineHeight: 1,
-              color: isGood ? "#22d3ee" : "#f59e0b",
-              textShadow: theme === "dark" ? `0 0 30px ${isGood ? "rgba(34,211,238,0.5)" : "rgba(245,158,11,0.5)"}` : "none",
-              fontVariantNumeric: "tabular-nums",
+              display: "inline-block",
+              padding: "4px 14px 6px",
+              borderRadius: "12px",
+              background: theme === "dark" ? "rgba(6,9,18,0.75)" : "rgba(255,255,255,0.75)",
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
             }}>
-              {savingsRate.toFixed(1)}%
+              <div style={{
+                fontSize: "28px", fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1,
+                color: isGood ? "#22d3ee" : "#f59e0b",
+                fontVariantNumeric: "tabular-nums",
+              }}>
+                {savingsRate.toFixed(1)}%
+              </div>
             </div>
-            <div style={{ fontSize: "11px", color: t.textDim, marginTop: "4px" }}>of income saved</div>
+            <div style={{ fontSize: "11px", color: t.textDim, marginTop: "5px" }}>of income saved</div>
           </div>
           <div style={{ position: "absolute", bottom: "0", left: "10%", fontSize: "9px", color: t.textFaint }}>0%</div>
           <div style={{ position: "absolute", bottom: "0", left: "50%", transform: "translateX(-50%)", fontSize: "9px", color: t.textDim }}>50%</div>
