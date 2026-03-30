@@ -53,8 +53,12 @@ function DashboardContent() {
   // Number of distinct calendar months covered by uploaded data
   const uploadedMonthCount = useMemo(() => {
     if (creditCardExpenses.length === 0) return 1;
-    const months = new Set(creditCardExpenses.map(e => e.date.slice(0, 7)));
-    return Math.max(months.size, 1);
+    const allMonths = creditCardExpenses.map(e => e.date.slice(0, 7)).filter(m => /^\d{4}-\d{2}$/.test(m));
+    if (allMonths.length === 0) return 1;
+    // Only count months from the most recent year (billing overlap can add previous-year months)
+    const maxYear = allMonths.reduce((max, m) => Math.max(max, parseInt(m.slice(0, 4))), 0);
+    const thisYearMonths = new Set(allMonths.filter(m => m.startsWith(String(maxYear))));
+    return Math.max(thisYearMonths.size, 1);
   }, [creditCardExpenses]);
 
   // In "all" mode: salary and fixed scale with number of months covered
