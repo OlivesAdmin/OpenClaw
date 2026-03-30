@@ -249,15 +249,11 @@ function DashboardContent() {
               />
             </div>
             {/* Right sidebar — shown after left col on mobile */}
-            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr", gap: "16px", alignContent: "start" }}>
-              <div style={{ gridColumn: isMobile ? "1 / -1" : "auto" }}>
-                <SavingsGauge totalCC={totalCC} monthMultiplier={monthMultiplier} />
-              </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "16px", alignContent: "start" }}>
+              <SavingsGauge totalCC={totalCC} monthMultiplier={monthMultiplier} />
               <StatementUpload onUpload={addStatement} />
               <FixedExpenses monthMultiplier={monthMultiplier} />
-              <div style={{ gridColumn: isMobile ? "1 / -1" : "auto" }}>
-                <BudgetTracker expenses={monthExpenses} monthMultiplier={monthMultiplier} />
-              </div>
+              <BudgetTracker expenses={monthExpenses} monthMultiplier={monthMultiplier} />
             </div>
           </div>
 
