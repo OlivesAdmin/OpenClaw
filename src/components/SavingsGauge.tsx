@@ -8,19 +8,22 @@ import { useTheme } from "@/lib/theme";
 
 interface SavingsGaugeProps {
   totalCC: number;
+  monthMultiplier?: number;
 }
 
-export default function SavingsGauge({ totalCC }: SavingsGaugeProps) {
+export default function SavingsGauge({ totalCC, monthMultiplier = 1 }: SavingsGaugeProps) {
   const { theme, t } = useTheme();
-  const totalFixed  = FIXED_EXPENSES.reduce((s, e) => s + e.amount, 0);
-  const netSavings  = MONTHLY_SALARY - totalFixed - totalCC;
-  const savingsRate = Math.max((netSavings / MONTHLY_SALARY) * 100, 0);
+  const totalFixed  = FIXED_EXPENSES.reduce((s, e) => s + e.amount, 0) * monthMultiplier;
+  const salary      = MONTHLY_SALARY * monthMultiplier;
+  const ccBudget    = CREDIT_CARD_BUDGET * monthMultiplier;
+  const netSavings  = salary - totalFixed - totalCC;
+  const savingsRate = Math.max((netSavings / salary) * 100, 0);
   const targetRate  = 50;
   const isGood      = savingsRate >= 40;
 
   const gaugeData = [{ name: "Savings", value: savingsRate, fill: isGood ? "#22d3ee" : "#f59e0b" }];
 
-  const ccRatio   = totalCC / CREDIT_CARD_BUDGET;
+  const ccRatio   = totalCC / ccBudget;
   const health    = Math.round((savingsRate / targetRate) * 50 + Math.max(0, (1 - ccRatio)) * 30 + 20);
   const clampedHealth = Math.min(health, 100);
   const healthColor = clampedHealth >= 80 ? "#22d3ee" : clampedHealth >= 60 ? "#34d399" : clampedHealth >= 40 ? "#f59e0b" : "#f87171";
@@ -28,8 +31,8 @@ export default function SavingsGauge({ totalCC }: SavingsGaugeProps) {
 
   const milestones = [
     { label: "Save ≥40%",   done: savingsRate >= 40,  c: "#34d399" },
-    { label: "CC in budget", done: totalCC <= CREDIT_CARD_BUDGET, c: "#6366f1" },
-    { label: "Fixed < 50%", done: totalFixed / MONTHLY_SALARY < 0.5, c: "#f59e0b" },
+    { label: "CC in budget", done: totalCC <= ccBudget, c: "#6366f1" },
+    { label: "Fixed < 50%", done: totalFixed / salary < 0.5, c: "#f59e0b" },
     { label: "No deficit",  done: netSavings >= 0, c: "#22d3ee" },
   ];
 

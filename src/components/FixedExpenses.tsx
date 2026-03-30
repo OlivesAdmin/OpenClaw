@@ -11,11 +11,16 @@ const EXPENSE_META: Record<string, { Icon: React.ElementType; c1: string; c2: st
   Helper:          { Icon: Users, c1: "#10b981", c2: "#34d399" },
 };
 
-export default function FixedExpenses() {
+interface FixedExpensesProps {
+  monthMultiplier?: number;
+}
+
+export default function FixedExpenses({ monthMultiplier = 1 }: FixedExpensesProps) {
   const { theme, t } = useTheme();
-  const total     = FIXED_EXPENSES.reduce((s, e) => s + e.amount, 0);
-  const pct       = ((total / MONTHLY_SALARY) * 100).toFixed(1);
-  const remaining = MONTHLY_SALARY - total;
+  const salary    = MONTHLY_SALARY * monthMultiplier;
+  const total     = FIXED_EXPENSES.reduce((s, e) => s + e.amount, 0) * monthMultiplier;
+  const pct       = ((total / salary) * 100).toFixed(1);
+  const remaining = salary - total;
 
   return (
     <div className="fade-in-up" style={{
@@ -58,11 +63,11 @@ export default function FixedExpenses() {
                     </div>
                     <div>
                       <div style={{ fontSize: "13px", fontWeight: 600, color: t.textSecondary }}>{expense.name}</div>
-                      <div style={{ fontSize: "10px", color: t.textDim, marginTop: "2px" }}>{barPct.toFixed(0)}% of fixed</div>
+                      <div style={{ fontSize: "10px", color: t.textDim, marginTop: "2px" }}>{barPct.toFixed(0)}% of fixed{monthMultiplier > 1 ? ` · ×${monthMultiplier}mo` : ""}</div>
                     </div>
                   </div>
                   <div style={{ fontSize: "15px", fontWeight: 900, color: meta.c1, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>
-                    {formatCurrency(expense.amount)}
+                    {formatCurrency(expense.amount * monthMultiplier)}
                   </div>
                 </div>
                 <div style={{ height: "3px", borderRadius: "9999px", background: t.progressTrack, overflow: "hidden" }}>
