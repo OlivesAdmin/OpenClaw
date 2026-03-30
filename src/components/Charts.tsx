@@ -15,6 +15,7 @@ import { useTheme } from "@/lib/theme";
 interface ChartsProps {
   expenses: CreditCardExpense[];      // current selected month
   allExpenses: CreditCardExpense[];   // all uploaded months (for trend)
+  effectiveSalary?: number;           // cumulative income for correct % calculation
 }
 
 const MONTH_LABELS: Record<string, string> = {
@@ -55,18 +56,22 @@ function buildMonthlyData(allExpenses: CreditCardExpense[], currentCC: number) {
   });
 }
 
-export default function Charts({ expenses, allExpenses }: ChartsProps) {
+export default function Charts({ expenses, allExpenses, effectiveSalary }: ChartsProps) {
   const { theme, t } = useTheme();
   const [activeChart, setActiveChart] = useState<"allocation" | "trend" | "breakdown">("allocation");
 
   const totalCC    = expenses.reduce((s, e) => s + e.amount, 0);
+  const salary     = effectiveSalary || MONTHLY_SALARY;
   const totalFixed = FIXED_EXPENSES.reduce((s, e) => s + e.amount, 0);
-  const netSavings = MONTHLY_SALARY - totalFixed - totalCC;
+  // Fixed expenses scale with how many months are in the salary figure
+  const fixedScale = Math.round(salary / MONTHLY_SALARY);
+  const scaledFixed = totalFixed * fixedScale;
+  const netSavings = salary - scaledFixed - totalCC;
   const monthlyData = buildMonthlyData(allExpenses, totalCC);
 
   const allocationData = [
     ...FIXED_EXPENSES.map((e) => ({
-      name: e.name, value: e.amount,
+      name: e.name, value: e.amount * fixedScale,
       color: e.name === "Rental" ? "#6366f1" : e.name === "Utility Bills" ? "#f59e0b" : "#10b981",
     })),
     { name: "CC Spend", value: totalCC || CREDIT_CARD_BUDGET, color: "#ec4899" },
@@ -146,7 +151,7 @@ export default function Charts({ expenses, allExpenses }: ChartsProps) {
               </div>
               <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "10px", minWidth: 0 }}>
                 {allocationData.map((entry, i) => {
-                  const pct = ((entry.value / MONTHLY_SALARY) * 100).toFixed(1);
+                  const pct = ((entry.value / salary) * 100).toFixed(1);
                   return (
                     <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                       <div style={{ width: "10px", height: "10px", borderRadius: "3px", flexShrink: 0, background: entry.color }} />
@@ -159,8 +164,8 @@ export default function Charts({ expenses, allExpenses }: ChartsProps) {
               </div>
             </div>
             <div style={{ marginTop: "16px", padding: "12px 16px", borderRadius: "14px", background: t.subCardBg, border: `1px solid ${t.subCardBorder}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: "11px", color: t.textDim, fontWeight: 600 }}>Total Monthly</span>
-              <span style={{ fontSize: "16px", fontWeight: 900, color: t.text, letterSpacing: "-0.04em", fontVariantNumeric: "tabular-nums" }}>{formatCurrency(MONTHLY_SALARY)}</span>
+              <span style={{ fontSize: "11px", color: t.textDim, fontWeight: 600 }}>{fixedScale > 1 ? `Total (${fixedScale} months)` : "Total Monthly"}</span>
+              <span style={{ fontSize: "16px", fontWeight: 900, color: t.text, letterSpacing: "-0.04em", fontVariantNumeric: "tabular-nums" }}>{formatCurrency(salary)}</span>
             </div>
           </div>
         )}

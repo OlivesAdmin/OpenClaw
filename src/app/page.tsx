@@ -255,7 +255,7 @@ function DashboardContent() {
           {/* Row 2: Charts + CC | Gauge + Fixed + Budget + Upload */}
           <div style={{ display: "grid", gridTemplateColumns: isDesktop ? "1fr 380px" : "1fr", gap: "16px", marginBottom: "16px" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "20px", minWidth: 0 }}>
-              <Charts expenses={monthExpenses} allExpenses={creditCardExpenses} />
+              <Charts expenses={monthExpenses} allExpenses={creditCardExpenses} effectiveSalary={effectiveSalary} />
               <CreditCardExpenses
                 statements={statements} expenses={monthExpenses}
                 selectedMonth={selectedMonth} onRemoveStatement={removeStatement}
