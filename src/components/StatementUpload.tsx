@@ -17,7 +17,7 @@ export default function StatementUpload({ onUpload }: StatementUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState("");
-  const [cardName, setCardName] = useState("DBS Cashback");
+  const [cardName, setCardName] = useState("Citi PremierMiles");
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   const [error, setError] = useState("");
   const [lastCount, setLastCount] = useState<number | null>(null);
