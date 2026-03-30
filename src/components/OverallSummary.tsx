@@ -61,7 +61,7 @@ export default function OverallSummary({ totalCreditCard, monthMultiplier = 1 }:
           <div>
             <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: t.label, marginBottom: "5px" }}>Overview</div>
             <h2 style={{ fontSize: "17px", fontWeight: 700, color: t.text }}>Financial Summary</h2>
-            <p style={{ fontSize: "11px", color: t.textDim, marginTop: "3px" }}>Monthly income vs expenses</p>
+            <p style={{ fontSize: "11px", color: t.textDim, marginTop: "3px" }}>{monthMultiplier > 1 ? `${monthMultiplier}-Month` : "Monthly"} income vs expenses</p>
           </div>
           <div style={{
             display: "flex", alignItems: "center", gap: "5px", padding: "5px 12px", borderRadius: "9999px",
@@ -169,14 +169,14 @@ export default function OverallSummary({ totalCreditCard, monthMultiplier = 1 }:
                   <span style={{ fontSize: "12px", color: t.textMuted }}>Upload a bank statement to see your full summary</span>
                 </div>
               )}
-              {totalCreditCard > 0 && totalCreditCard > CREDIT_CARD_BUDGET && (
+              {totalCreditCard > 0 && totalCreditCard > CREDIT_CARD_BUDGET * monthMultiplier && (
                 <div style={{
                   display: "flex", alignItems: "flex-start", gap: "10px", padding: "12px 16px", borderRadius: "14px",
                   background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.15)",
                 }}>
                   <Lightbulb size={13} style={{ color: "#f87171", flexShrink: 0, marginTop: "1px" }} />
                   <span style={{ fontSize: "12px", color: t.textMuted }}>
-                    Cut CC spend by <span style={{ color: "#f87171", fontWeight: 900 }}>{formatCurrency(totalCreditCard - CREDIT_CARD_BUDGET)}</span> to hit your {formatCurrency(CREDIT_CARD_BUDGET)} target
+                    Cut CC spend by <span style={{ color: "#f87171", fontWeight: 900 }}>{formatCurrency(totalCreditCard - CREDIT_CARD_BUDGET * monthMultiplier)}</span> to hit your {formatCurrency(CREDIT_CARD_BUDGET * monthMultiplier)} target
                   </span>
                 </div>
               )}

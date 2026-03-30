@@ -87,8 +87,8 @@ export default function SavingsGauge({ totalCC, monthMultiplier = 1 }: SavingsGa
         {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "18px" }}>
           {[
-            { label: "Saved/mo",   val: formatCurrency(Math.max(netSavings, 0)), c: "#22d3ee" },
-            { label: "Annual proj.", val: formatCurrency(Math.max(netSavings, 0) * 12), c: "#a78bfa" },
+            { label: monthMultiplier > 1 ? `Saved (${monthMultiplier}mo)` : "Saved/mo", val: formatCurrency(Math.max(netSavings, 0)), c: "#22d3ee" },
+            { label: "Annual proj.", val: formatCurrency((Math.max(netSavings, 0) / monthMultiplier) * 12), c: "#a78bfa" },
           ].map((item) => (
             <div key={item.label} style={{ padding: "10px 12px", borderRadius: "14px", background: t.subCardBg, border: `1px solid ${t.subCardBorder}` }}>
               <div style={{ fontSize: "10px", color: t.textDim, marginBottom: "4px" }}>{item.label}</div>
