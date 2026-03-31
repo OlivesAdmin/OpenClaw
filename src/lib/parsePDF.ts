@@ -145,16 +145,13 @@ interface RawItem {
 
 async function extractPageLines(file: File): Promise<string[][]> {
   const pdfjsLib = await getPdfLib();
-  console.log("[parsePDF] pdfjs loaded, getDocument type:", typeof pdfjsLib.getDocument);
   const buffer = await file.arrayBuffer();
-  console.log("[parsePDF] arrayBuffer size:", buffer.byteLength);
   const pdf = await pdfjsLib.getDocument({
     data: buffer,
     useWorkerFetch: false,
     isEvalSupported: false,
     useSystemFonts: true,
   }).promise;
-  console.log("[parsePDF] pdf loaded, pages:", pdf.numPages);
 
   const allPageLines: string[][] = [];
 
