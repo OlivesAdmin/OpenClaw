@@ -7,14 +7,34 @@ import { categorizeExpense } from "./utils";
 
 // ─── PDF.js dynamic import ────────────────────────────────────────────────────
 
-// Polyfill Promise.withResolvers (ES2024) — required by pdfjs v5.
-// Safari < 17.4 and older iOS devices don't have it natively.
+// Polyfill 1: Promise.withResolvers (ES2024) — missing in Safari < 17.4 / iOS < 17.4.
 if (typeof window !== "undefined" && typeof (Promise as any).withResolvers === "undefined") {
   (Promise as any).withResolvers = function <T = unknown>() {
     let resolve!: (value: T | PromiseLike<T>) => void;
     let reject!: (reason?: unknown) => void;
     const promise = new Promise<T>((r, j) => { resolve = r; reject = j; });
     return { promise, resolve, reject };
+  };
+}
+
+// Polyfill 2: ReadableStream async iteration — missing in Safari < 16.0 / iOS < 16.0.
+// pdfjs v5 uses `for await (const chunk of readableStream)` in getTextContent().
+if (
+  typeof window !== "undefined" &&
+  typeof ReadableStream !== "undefined" &&
+  !(Symbol.asyncIterator in ReadableStream.prototype)
+) {
+  (ReadableStream.prototype as any)[Symbol.asyncIterator] = async function* () {
+    const reader = (this as ReadableStream).getReader();
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) return;
+        yield value;
+      }
+    } finally {
+      reader.releaseLock();
+    }
   };
 }
 
