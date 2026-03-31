@@ -91,7 +91,10 @@ export default function StatementUpload({ onUpload }: StatementUploadProps) {
         setUploading(false);
         setProgress("");
       } catch (err) {
-        setError(`Failed to parse file: ${err instanceof Error ? err.message : "Unknown error"}`);
+        const msg = err instanceof Error ? err.message : String(err);
+        const stack = err instanceof Error && err.stack ? `\n${err.stack.split("\n").slice(0,3).join(" | ")}` : "";
+        console.error("[upload] parse error:", err);
+        setError(`Failed to parse file: ${msg}${stack}`);
         setUploading(false);
         setProgress("");
       }
