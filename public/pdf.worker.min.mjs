@@ -1,3 +1,5 @@
+/* Promise.withResolvers polyfill for Safari<17.4 / iOS<17.4 */
+if(typeof Promise.withResolvers==="undefined"){Promise.withResolvers=function(){var r,j;var p=new Promise(function(a,b){r=a;j=b});return{promise:p,resolve:r,reject:j}}}
 /**
  * @licstart The following is the entire license notice for the
  * JavaScript code in this page

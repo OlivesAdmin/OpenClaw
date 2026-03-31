@@ -21,8 +21,8 @@ if (typeof window !== "undefined" && typeof (Promise as any).withResolvers === "
 async function getPdfLib() {
   const pdfjsLib = await import("pdfjs-dist");
   if (typeof window !== "undefined" && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
-    // Use the compat wrapper which polyfills Promise.withResolvers inside the worker thread
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.compat.mjs";
+    // Use the patched worker (has Promise.withResolvers polyfill prepended for iOS < 17.4)
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
   }
   return pdfjsLib;
 }
